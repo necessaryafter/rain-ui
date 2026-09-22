@@ -1,0 +1,20 @@
+# Gradle
+.gradle/
+build/
+*/build/
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Minecraft/Loom
+run/
+
+# Node/Bun
+node_modules/
+*.log
+
+# OS
+.DS_Store

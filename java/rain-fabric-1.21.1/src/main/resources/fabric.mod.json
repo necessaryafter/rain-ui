@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "rain-ui",
+  "version": "${version}",
+  "name": "Rain UI",
+  "description": "A framework for replacing Minecraft chest menus with proper UIs.",
+  "authors": [
+    "Rain Contributors"
+  ],
+  "contact": {
+    "homepage": "https://github.com/anthropics/rain-ui",
+    "sources": "https://github.com/anthropics/rain-ui"
+  },
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.rainframework.ui.RainUIServer"
+    ],
+    "client": [
+      "com.rainframework.ui.RainUIClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

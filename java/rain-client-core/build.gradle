@@ -1,0 +1,19 @@
+plugins {
+    id "java"
+}
+
+group = "com.rainframework.ui"
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+    withSourcesJar()
+}
+
+dependencies {
+    implementation project(":rain-protocol")
+}

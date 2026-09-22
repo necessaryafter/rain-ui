@@ -1,0 +1,25 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "rain-ui-monorepo",
+    },
+    "packages/cli": {
+      "name": "@rain-ui/cli",
+      "version": "1.0.0",
+      "bin": {
+        "rain": "index.ts",
+      },
+    },
+    "packages/core": {
+      "name": "@rain-ui/core",
+      "version": "1.0.0",
+    },
+  },
+  "packages": {
+    "@rain-ui/cli": ["@rain-ui/cli@workspace:packages/cli"],
+
+    "@rain-ui/core": ["@rain-ui/core@workspace:packages/core"],
+  }
+}

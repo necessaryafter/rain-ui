@@ -1,0 +1,12 @@
+{
+  "name": "@rain-ui/cli",
+  "version": "1.0.0",
+  "description": "Rain UI CLI for building and developing screens",
+  "type": "module",
+  "bin": {
+    "rain": "index.ts"
+  },
+  "scripts": {
+    "test": "bun test"
+  }
+}

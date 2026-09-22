@@ -1,0 +1,10 @@
+{
+  "name": "@rain-ui/core",
+  "version": "1.0.0",
+  "description": "Rain UI core library for component definitions and jsx-runtime",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "test": "bun test"
+  }
+}

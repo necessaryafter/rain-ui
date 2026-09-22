@@ -1,0 +1,54 @@
+plugins {
+    id "net.fabricmc.fabric-loom" version "1.17-SNAPSHOT"
+    id "maven-publish"
+    id "java"
+}
+
+group = "com.rainframework.ui"
+version = "1.0.0"
+
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        "rain-ui" {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:26.1.2"
+    implementation "net.fabricmc:fabric-loader:0.19.5"
+    implementation "net.fabricmc.fabric-api:fabric-api:0.155.3+26.1.2"
+
+    implementation project(":rain-protocol")
+    implementation project(":rain-server")
+    implementation project(":rain-client-core")
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 25
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+    withSourcesJar()
+}
+
+processResources {
+    def version = project.version
+    inputs.property "version", version
+    filesMatching("fabric.mod.json") {
+        expand "version": version
+    }
+}
+
+publishing {
+    publications {
+        create("mavenJava", MavenPublication) {
+            from components.java
+        }
+    }
+}

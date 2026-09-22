@@ -1,0 +1,9 @@
+{
+  "name": "rain-ui-monorepo",
+  "version": "1.0.0",
+  "description": "A framework for replacing Minecraft menus with proper UIs",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ]
+}
