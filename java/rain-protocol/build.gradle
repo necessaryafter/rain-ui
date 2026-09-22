@@ -27,5 +27,6 @@ repositories {
 // Phase A: Test infrastructure exists but isn't run yet (implementations don't exist).
 // Phase B will implement the code and enable these tests.
 test {
+    useJUnitPlatform()
     enabled = false // TODO: Re-enable in Phase B after implementations are added
 }
