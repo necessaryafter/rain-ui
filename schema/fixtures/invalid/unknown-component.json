@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 0,
+  "id": "test:unknown",
+  "properties": {},
+  "actions": {},
+  "root": {
+    "type": "unknownComponent",
+    "props": {},
+    "children": []
+  }
+}

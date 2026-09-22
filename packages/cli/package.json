@@ -8,5 +8,8 @@
   },
   "scripts": {
     "test": "bun test"
+  },
+  "dependencies": {
+    "typescript": "^5.3"
   }
 }

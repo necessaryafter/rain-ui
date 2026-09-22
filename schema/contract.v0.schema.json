@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Rain UI Contract Schema v0",
+  "description": "JSON Schema for Rain UI screen contracts (schemaVersion 0)",
+  "type": "object",
+  "required": ["schemaVersion", "id", "properties", "actions", "root"],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 0,
+      "description": "Contract schema version — only 0 is supported in M1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_-]+:[a-z0-9_/-]+$",
+      "description": "Screen identifier in Minecraft namespace format (namespace:path)"
+    },
+    "properties": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/TypeSchema"
+      },
+      "description": "Root-level data properties the server sends to this screen"
+    },
+    "actions": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/TypeSchema"
+      },
+      "maxProperties": 256,
+      "description": "Actions this screen can dispatch, mapped to payload schemas"
+    },
+    "root": {
+      "$ref": "#/definitions/ComponentNode",
+      "description": "Root component node of the screen's layout tree"
+    }
+  },
+  "definitions": {
+    "TypeSchema": {
+      "oneOf": [
+        { "$ref": "#/definitions/TypeString" },
+        { "$ref": "#/definitions/TypeInt" },
+        { "$ref": "#/definitions/TypeLong" },
+        { "$ref": "#/definitions/TypeBool" },
+        { "$ref": "#/definitions/TypeItem" },
+        { "$ref": "#/definitions/TypeList" },
+        { "$ref": "#/definitions/TypeObject" }
+      ],
+      "description": "Type schema for properties, actions, and object fields"
+    },
+    "TypeString": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "const": "string" }
+      },
+      "additionalProperties": false
+    },
+    "TypeInt": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "const": "int" }
+      },
+      "additionalProperties": false
+    },
+    "TypeLong": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "const": "long" }
+      },
+      "additionalProperties": false
+    },
+    "TypeBool": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "const": "bool" }
+      },
+      "additionalProperties": false
+    },
+    "TypeItem": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "const": "item" }
+      },
+      "additionalProperties": false
+    },
+    "TypeList": {
+      "type": "object",
+      "required": ["kind", "of"],
+      "properties": {
+        "kind": { "const": "list" },
+        "of": { "$ref": "#/definitions/TypeSchema" }
+      },
+      "additionalProperties": false
+    },
+    "TypeObject": {
+      "type": "object",
+      "required": ["kind", "fields"],
+      "properties": {
+        "kind": { "const": "object" },
+        "fields": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/TypeSchema" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ComponentNode": {
+      "type": "object",
+      "required": ["type", "props", "children"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["column", "row", "text", "item", "button", "list"],
+          "description": "Component type"
+        },
+        "props": {
+          "type": "object",
+          "description": "Component properties (structure varies by type)"
+        },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/ComponentNode" },
+          "description": "Child component nodes"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

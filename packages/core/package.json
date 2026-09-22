@@ -6,5 +6,9 @@
   "type": "module",
   "scripts": {
     "test": "bun test"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./jsx-runtime": "./jsx-runtime.ts"
   }
 }
