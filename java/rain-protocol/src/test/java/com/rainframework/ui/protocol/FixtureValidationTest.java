@@ -64,17 +64,14 @@ public class FixtureValidationTest {
   Iterable<DynamicTest> testValidFixtures() {
     return validFixtures.stream()
         .map(path -> DynamicTest.dynamicTest(path.getFileName().toString(), () -> {
-          // TODO: Implement ContractParser and ContractValidator
-          // String content = Files.readString(path, StandardCharsets.UTF_8);
-          // ContractParser parser = new ContractParser();
-          // Contract contract = parser.parse(content);
-          // assertNotNull(contract);
-          //
-          // ContractValidator validator = new ContractValidator();
-          // ValidationResult result = validator.validate(contract);
-          // assertTrue(result.isValid(), "Fixture " + path.getFileName() + " should be valid");
+          String content = Files.readString(path, StandardCharsets.UTF_8);
+          ContractParser parser = new ContractParser();
+          Contract contract = parser.parse(content);
+          assertNotNull(contract);
 
-          fail("ContractParser and ContractValidator not yet implemented");
+          ContractValidator validator = new ContractValidator();
+          ValidationResult result = validator.validate(contract);
+          assertTrue(result.isValid(), "Fixture " + path.getFileName() + " should be valid");
         }))
         .collect(Collectors.toList());
   }
@@ -91,28 +88,26 @@ public class FixtureValidationTest {
             fail("Missing .error.json for fixture: " + path.getFileName());
           }
 
-          // TODO: Implement ContractParser and ContractValidator
-          // String content = Files.readString(path, StandardCharsets.UTF_8);
-          // String expectedStr = Files.readString(errorPath, StandardCharsets.UTF_8);
-          // Map<String, Object> expected = mapper.readValue(expectedStr, Map.class);
-          //
-          // String expectedCode = (String) expected.get("code");
-          // String expectedPath = (String) expected.get("path");
-          //
-          // ContractParser parser = new ContractParser();
-          // try {
-          //   Contract contract = parser.parse(content);
-          //   ContractValidator validator = new ContractValidator();
-          //   ValidationResult result = validator.validate(contract);
-          //   assertFalse(result.isValid(), "Fixture should be invalid: " + path.getFileName());
-          //   assertEquals(expectedCode, result.getError().getCode());
-          //   assertEquals(expectedPath, result.getError().getPath());
-          // } catch (ParseException e) {
-          //   assertEquals(expectedCode, e.getErrorCode());
-          //   assertEquals(expectedPath, e.getPath());
-          // }
+          String content = Files.readString(path, StandardCharsets.UTF_8);
+          String expectedStr = Files.readString(errorPath, StandardCharsets.UTF_8);
+          @SuppressWarnings("unchecked")
+          var expected = (java.util.Map<String, Object>) mapper.readValue(expectedStr, java.util.Map.class);
 
-          fail("ContractParser and ContractValidator not yet implemented");
+          String expectedCode = (String) expected.get("code");
+          String expectedPath = (String) expected.get("path");
+
+          ContractParser parser = new ContractParser();
+          try {
+            Contract contract = parser.parse(content);
+            ContractValidator validator = new ContractValidator();
+            ValidationResult result = validator.validate(contract);
+            assertFalse(result.isValid(), "Fixture should be invalid: " + path.getFileName());
+            assertEquals(expectedCode, result.getError().getCode().name());
+            assertEquals(expectedPath, result.getError().getPath());
+          } catch (ParseException e) {
+            assertEquals(expectedCode, e.getErrorCode().name());
+            assertEquals(expectedPath, e.getPath());
+          }
         }))
         .collect(Collectors.toList());
   }
