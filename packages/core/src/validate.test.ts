@@ -1,59 +1,54 @@
-import { describe, it, expect, beforeAll } from "bun:test";
+import { describe, it, expect } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
 
 // Note: These tests are RED/FAILING in Phase A — validateContract() doesn't exist yet.
 // They are specification for M1 Phase B implementation.
 
+// TODO: Import validateContract once implemented in validate.ts
+// import { validateContract, ValidationErrorCode } from "./validate";
+
+// Load fixtures at module scope, before describe() registration (not inside beforeAll).
+// This fixes the test-collection-time ordering issue where nested describe() bodies
+// run synchronously before beforeAll() executes, leaving fixture arrays empty.
+const fixturesDir = path.join(import.meta.dir, "../../../../schema/fixtures");
+
+const validFixtures: { name: string; content: any }[] = [];
+const validDir = path.join(fixturesDir, "valid");
+if (fs.existsSync(validDir)) {
+  fs.readdirSync(validDir)
+    .filter((f) => f.endsWith(".json"))
+    .forEach((file) => {
+      const content = JSON.parse(
+        fs.readFileSync(path.join(validDir, file), "utf-8")
+      );
+      validFixtures.push({ name: file.replace(".json", ""), content });
+    });
+}
+
+const invalidFixtures: { name: string; content: any; expected: any }[] = [];
+const invalidDir = path.join(fixturesDir, "invalid");
+if (fs.existsSync(invalidDir)) {
+  fs.readdirSync(invalidDir)
+    .filter((f) => f.endsWith(".json") && !f.endsWith(".error.json"))
+    .forEach((file) => {
+      const content = JSON.parse(
+        fs.readFileSync(path.join(invalidDir, file), "utf-8")
+      );
+      const errorFile = file.replace(".json", ".error.json");
+      const errorPath = path.join(invalidDir, errorFile);
+      if (fs.existsSync(errorPath)) {
+        const expected = JSON.parse(fs.readFileSync(errorPath, "utf-8"));
+        invalidFixtures.push({
+          name: file.replace(".json", ""),
+          content,
+          expected,
+        });
+      }
+    });
+}
+
 describe("Contract Validator (fixture-driven)", () => {
-  // TODO: Import validateContract once implemented in validate.ts
-  // import { validateContract, ValidationErrorCode } from "./validate";
-
-  let validFixtures: { name: string; content: any }[] = [];
-  let invalidFixtures: { name: string; content: any; expected: any }[] = [];
-
-  beforeAll(() => {
-    const fixturesDir = path.join(
-      import.meta.dir,
-      "../../../../schema/fixtures"
-    );
-
-    // Load valid fixtures
-    const validDir = path.join(fixturesDir, "valid");
-    if (fs.existsSync(validDir)) {
-      fs.readdirSync(validDir)
-        .filter((f) => f.endsWith(".json"))
-        .forEach((file) => {
-          const content = JSON.parse(
-            fs.readFileSync(path.join(validDir, file), "utf-8")
-          );
-          validFixtures.push({ name: file.replace(".json", ""), content });
-        });
-    }
-
-    // Load invalid fixtures
-    const invalidDir = path.join(fixturesDir, "invalid");
-    if (fs.existsSync(invalidDir)) {
-      fs.readdirSync(invalidDir)
-        .filter((f) => f.endsWith(".json") && !f.endsWith(".error.json"))
-        .forEach((file) => {
-          const content = JSON.parse(
-            fs.readFileSync(path.join(invalidDir, file), "utf-8")
-          );
-          const errorFile = file.replace(".json", ".error.json");
-          const errorPath = path.join(invalidDir, errorFile);
-          if (fs.existsSync(errorPath)) {
-            const expected = JSON.parse(fs.readFileSync(errorPath, "utf-8"));
-            invalidFixtures.push({
-              name: file.replace(".json", ""),
-              content,
-              expected,
-            });
-          }
-        });
-    }
-  });
-
   describe("Valid fixtures", () => {
     validFixtures.forEach(({ name, content }) => {
       it(`accepts valid fixture: ${name}`, () => {

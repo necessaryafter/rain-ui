@@ -28,5 +28,6 @@ repositories {
 // Phase B will implement the code and enable these tests.
 test {
     useJUnitPlatform()
+    workingDir = rootProject.projectDir
     enabled = false // TODO: Re-enable in Phase B after implementations are added
 }
