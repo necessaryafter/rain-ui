@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class ContractParser {
   private static final ObjectMapper mapper = new ObjectMapper();
@@ -124,33 +125,47 @@ public final class ContractParser {
       throw new ParseException(ValidationErrorCode.UNKNOWN_SCHEMA_VERSION, path);
     }
 
-    JsonNode typeNode = node.get("type");
-    if (typeNode == null || !typeNode.isTextual()) {
+    String type = extractRequiredString(node, "type", path);
+    Map<String, JsonNode> props = extractRequiredProps(node, path);
+    List<ComponentNode> children = extractChildren(node, path, depth);
+
+    return new ComponentNode(type, props, children);
+  }
+
+  private String extractRequiredString(JsonNode node, String field, String path) throws ParseException {
+    JsonNode fieldNode = node.get(field);
+    if (fieldNode == null || !fieldNode.isTextual()) {
       throw new ParseException(ValidationErrorCode.UNKNOWN_SCHEMA_VERSION, path);
     }
-    String type = typeNode.asText();
+    return fieldNode.asText();
+  }
 
+  private Map<String, JsonNode> extractRequiredProps(JsonNode node, String path) throws ParseException {
     JsonNode propsNode = node.get("props");
     if (propsNode == null || !propsNode.isObject()) {
       throw new ParseException(ValidationErrorCode.UNKNOWN_SCHEMA_VERSION, path);
     }
+
     Map<String, JsonNode> props = new HashMap<>();
     for (var it = propsNode.fields(); it.hasNext(); ) {
       var entry = it.next();
       props.put(entry.getKey(), entry.getValue());
     }
+    return props;
+  }
 
+  private List<ComponentNode> extractChildren(JsonNode node, String path, int depth) throws ParseException {
     JsonNode childrenNode = node.get("children");
     if (childrenNode == null || !childrenNode.isArray()) {
       throw new ParseException(ValidationErrorCode.UNKNOWN_SCHEMA_VERSION, path);
     }
+
     List<ComponentNode> children = new ArrayList<>();
     int index = 0;
     for (JsonNode child : childrenNode) {
       children.add(parseComponentNode(child, path + ".children[" + index + "]", depth + 1));
       index++;
     }
-
-    return new ComponentNode(type, props, children);
+    return children;
   }
 }

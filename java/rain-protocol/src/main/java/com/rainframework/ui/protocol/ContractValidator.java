@@ -19,31 +19,35 @@ public final class ContractValidator {
       Map.entry("list", Set.of("source")));
 
   public ValidationResult validate(Contract contract) {
-    // Check contract size
+    ValidationResult basicChecks = validateBasicConstraints(contract);
+    if (!basicChecks.isValid()) {
+      return basicChecks;
+    }
+
+    NodeValidator validator = new NodeValidator(contract.properties(), contract.actions());
+    return validator.validateComponentNode(contract.root(), "root", contract.properties(), 0);
+  }
+
+  private ValidationResult validateBasicConstraints(Contract contract) {
     if (contract.sourceBytes() > Limits.MAX_CONTRACT_BYTES) {
       return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, "root");
     }
 
-    // Check screen ID format
     if (!ID_PATTERN.matcher(contract.id()).matches()) {
       return ValidationResult.fail(ValidationErrorCode.INVALID_ID, "id");
     }
 
-    // Check action count
     if (contract.actions().size() > Limits.MAX_ACTIONS) {
       return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, "actions");
     }
 
-    // Check action ID formats
     for (String actionId : contract.actions().keySet()) {
       if (!ID_PATTERN.matcher(actionId).matches()) {
         return ValidationResult.fail(ValidationErrorCode.INVALID_ID, "actions");
       }
     }
 
-    // Validate root component with root properties scope
-    NodeValidator validator = new NodeValidator(contract.properties(), contract.actions());
-    return validator.validateComponentNode(contract.root(), "root", contract.properties(), 0);
+    return ValidationResult.ok();
   }
 
   private static class NodeValidator {
@@ -57,23 +61,37 @@ public final class ContractValidator {
     }
 
     ValidationResult validateComponentNode(ComponentNode node, String path, Map<String, TypeSchema> scope, int depth) {
-      // Check node count
+      ValidationResult limitCheck = checkLimits(path, depth);
+      if (!limitCheck.isValid()) {
+        return limitCheck;
+      }
+
+      if (!COMPONENT_TYPES.contains(node.type())) {
+        return ValidationResult.fail(ValidationErrorCode.UNKNOWN_COMPONENT, path);
+      }
+
+      ValidationResult propsCheck = validateNodeProps(node, path, scope);
+      if (!propsCheck.isValid()) {
+        return propsCheck;
+      }
+
+      return validateNodeChildren(node, path, scope, depth);
+    }
+
+    private ValidationResult checkLimits(String path, int depth) {
       nodeCount++;
       if (nodeCount > Limits.MAX_NODES) {
         return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, path);
       }
 
-      // Check depth
       if (depth > Limits.MAX_DEPTH) {
         return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, path);
       }
 
-      // Check component type
-      if (!COMPONENT_TYPES.contains(node.type())) {
-        return ValidationResult.fail(ValidationErrorCode.UNKNOWN_COMPONENT, path);
-      }
+      return ValidationResult.ok();
+    }
 
-      // Check props for unknown or invalid types
+    private ValidationResult validateNodeProps(ComponentNode node, String path, Map<String, TypeSchema> scope) {
       Set<String> allowedProps = COMPONENT_PROPS.getOrDefault(node.type(), Set.of());
       for (String propKey : node.props().keySet()) {
         if (!allowedProps.contains(propKey)) {
@@ -86,37 +104,34 @@ public final class ContractValidator {
           return propValidation;
         }
       }
+      return ValidationResult.ok();
+    }
 
-      // Validate children
+    private ValidationResult validateNodeChildren(ComponentNode node, String path, Map<String, TypeSchema> scope, int depth) {
       for (int i = 0; i < node.children().size(); i++) {
         ComponentNode child = node.children().get(i);
         String childPath = path + ".children[" + i + "]";
 
-        // If parent is a list, the child is a template that should be validated with item scope
-        if (node.type().equals("list")) {
-          JsonNode sourceBinding = node.props().get("source");
-          if (isBinding(sourceBinding)) {
-            String bindPath = sourceBinding.get("$bind").asText();
-            TypeSchema bindType = scope.get(bindPath);
-            if (bindType instanceof TypeSchema.ListType listType) {
-              if (listType.of() instanceof TypeSchema.ObjectType objectType) {
-                // Validate child with item scope
-                ValidationResult childResult = validateComponentNode(child, childPath, objectType.fields(), depth + 1);
-                if (!childResult.isValid()) {
-                  return childResult;
-                }
-              }
-            }
-          }
-        } else {
-          ValidationResult childResult = validateComponentNode(child, childPath, scope, depth + 1);
-          if (!childResult.isValid()) {
-            return childResult;
+        ValidationResult childResult = validateChild(node, child, childPath, scope, depth);
+        if (!childResult.isValid()) {
+          return childResult;
+        }
+      }
+      return ValidationResult.ok();
+    }
+
+    private ValidationResult validateChild(ComponentNode parent, ComponentNode child, String childPath, Map<String, TypeSchema> scope, int depth) {
+      if (parent.type().equals("list")) {
+        JsonNode sourceBinding = parent.props().get("source");
+        if (isBinding(sourceBinding)) {
+          String bindPath = sourceBinding.get("$bind").asText();
+          TypeSchema bindType = scope.get(bindPath);
+          if (bindType instanceof TypeSchema.ListType listType && listType.of() instanceof TypeSchema.ObjectType objectType) {
+            return validateComponentNode(child, childPath, objectType.fields(), depth + 1);
           }
         }
       }
-
-      return ValidationResult.ok();
+      return validateComponentNode(child, childPath, scope, depth + 1);
     }
 
     private ValidationResult validateProp(String componentType, String propName, JsonNode propValue, String path, Map<String, TypeSchema> scope) {
