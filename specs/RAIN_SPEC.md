@@ -37,8 +37,11 @@ Não reabrir nenhuma destas sem perguntar.
    dinâmico é binding para uma propriedade declarada. Condições (ex.: botão desabilitado) e formatação (ex.: preço como
    texto) são calculadas pelo servidor e enviadas como campos.
 3. **Contrato e propriedades são entrada não confiável no cliente.** Interações são entrada não confiável no servidor.
-4. **Paridade com o vanilla.** O Rain nunca dá ao servidor um poder que ele não tenha no vanilla. O cliente não faz IO a
-   pedido do servidor, não lê clipboard e não recebe input fora de uma tela Rain focada. ESC sempre fecha a tela.
+4. **Paridade com o vanilla.** O Rain nunca dá ao servidor um poder que ele não tenha no vanilla. A única IO de rede
+   que o cliente faz a pedido do servidor é **baixar conteúdo declarado por hash** (contratos e assets), com
+   consentimento do jogador, no mesmo molde do resource pack do vanilla (URL escolhida pelo servidor, hash, prompt).
+   O cliente não baixa URL arbitrária, não acessa arquivos fora do próprio cache, não lê clipboard e não recebe input
+   fora de uma tela Rain focada. ESC sempre fecha a tela. Ver `docs/decisions.md` §8.
 5. **Toda ação vai para o servidor.** Não existem props que abrem link, rodam comando ou copiam texto no cliente.
    Comandos são executados pelo servidor.
 6. **Sem reflection na serialização.** Objetos viram JSON apenas por adapters explícitos registrados por tipo. Só vai
@@ -51,16 +54,23 @@ Não reabrir nenhuma destas sem perguntar.
 
 ### 4.1 Fluxo
 
-1. O dev escreve a tela (ex.: `main.tsx`, com as declarações em `main.contract.ts`).
-2. `rain build` executa as telas com Bun, valida contra o schema e grava `dist/<namespace>/<tela>.json` com o SHA-256 no
-   manifesto.
-3. O servidor carrega os contratos no startup.
-4. `RainScreens.open(player, "shop:main", properties)` cria uma instância de tela e envia `OpenScreen` com o hash do
+1. O dev escreve a tela (ex.: `main.tsx`, com as declarações em `main.contract.ts`) e importa os assets que ela usa
+   (`import banner from "./banner.png"`).
+2. `rain build` executa as telas com Bun, valida contra o schema e grava `dist/<namespace>/<tela>.json`, os assets em
+   `dist/assets/<sha256>` e o manifesto com os hashes.
+3. O conteúdo estático é hospedado para download: pelo servidor HTTP base do Rain ou por qualquer servidor de arquivos
+   estáticos (nginx, CDN, o framework do dev). O servidor do jogo carrega os contratos no startup.
+4. No join, o `Hello` do servidor informa o `assetBaseUrl`.
+5. `RainScreens.open(player, "shop:main", properties)` cria uma instância de tela e envia `OpenScreen` com o hash do
    contrato e os dados.
-5. Se o cliente não tem aquele hash em cache, pede o contrato, e o servidor envia (fatiado se necessário).
-6. O mod valida contrato e propriedades, faz o binding e renderiza.
-7. Um clique envia `Interact(instanceId, revision, actionId, payload)`.
-8. O servidor valida, despacha o evento e envia exatamente uma resposta.
+6. Se o cliente não tem o contrato ou algum asset em cache, pede consentimento (uma vez por servidor), baixa por
+   `GET <assetBaseUrl>/<sha256>` e confere o hash de cada arquivo.
+7. O mod valida contrato e propriedades, faz o binding e renderiza.
+8. Um clique envia `Interact(instanceId, revision, actionId, payload)`.
+9. O servidor valida, despacha o evento e envia exatamente uma resposta.
+
+Por HTTP vai só o que é estático, igual para todos e endereçado por hash. Tudo que é por jogador (properties, cliques,
+respostas) continua na conexão do jogo, que já tem ordem e autenticação.
 
 ### 4.2 Estrutura do repositório
 
@@ -81,8 +91,8 @@ rain-ui/
 │       └── components/         # componentes reutilizáveis importados pela tela
 ├── java/
 │   ├── rain-protocol/          # Java puro: modelo do contrato, parser, validador, codecs dos pacotes, limites
-│   ├── rain-server/            # Java puro: RainScreens, Properties, adapters, dispatcher, eventos
-│   ├── rain-client-core/       # Java puro: árvore de componentes, layout, binding, estado pendente, remontagem de chunks, cache
+│   ├── rain-server/            # Java puro: RainScreens, Properties, adapters, dispatcher, eventos, servidor HTTP base
+│   ├── rain-client-core/       # Java puro: árvore de componentes, layout, binding, estado pendente, download e cache de assets
 │   ├── rain-fabric-1.21.1/     # adaptadores Fabric para 1.21.1 (Yarn, Java 21)
 │   └── rain-fabric-26.3/       # adaptadores Fabric para 26.3 (mappings oficiais, Java 25)
 ├── docs/
@@ -90,6 +100,9 @@ rain-ui/
 │   └── decisions.md
 └── CLAUDE.md
 ```
+
+O `rain build` gera `dist/` com `manifest.json`, `<namespace>/<tela>.json` e `assets/<sha256>` (arquivos planos, um
+por hash, prontos para qualquer servidor de arquivos estáticos).
 
 `rain-protocol`, `rain-server` e `rain-client-core` não importam nenhuma classe do Minecraft. Tudo que depende de
 plataforma entra por interfaces implementadas nos módulos de versão.
@@ -101,7 +114,9 @@ plataforma entra por interfaces implementadas nos módulos de versão.
 - **Módulos de versão.** Cada `rain-fabric-<versão>` é uma camada fina de adaptadores que implementa as interfaces de
   plataforma:
     - networking: registro e envio dos custom payloads;
-    - renderização: desenhar retângulo, texto e item, e medir texto;
+    - renderização: desenhar retângulo, texto, item e imagem, e medir texto;
+    - assets: decodificar imagem (PNG, JPEG, GIF) e fonte (TTF, OTF) com o que o cliente já traz (`lwjgl-stb`,
+      `lwjgl-freetype`);
     - input: traduzir mouse e teclado da tela para eventos do core;
     - ItemStack: codificar no servidor e decodificar no cliente com o codec vanilla da versão;
     - servidor: jogador, thread principal e ciclo de vida da conexão.
@@ -110,7 +125,7 @@ plataforma entra por interfaces implementadas nos módulos de versão.
 - **Protocolo e contrato idênticos nas duas versões.** Mesmo `protocolVersion`, mesmos codecs, mesmo JSON e mesmo hash
   de contrato. Só os dados que carregam ItemStack dependem da versão, e cliente e servidor estão sempre na mesma versão.
 - **Limite de pacote por versão.** O limite de tamanho de custom payload pode diferir entre as versões. Cada adaptador
-  expõe o limite da sua versão (confirmado nas fontes), e o tamanho de chunk é derivado dele.
+  expõe o limite da sua versão (confirmado nas fontes), e os limites de properties e payload precisam caber nele.
 
 ## 5. Contrato v0
 
@@ -132,7 +147,7 @@ emitido no contrato. A API exata deve ser proposta no plano do M1.
   `Record<string, Schema>`), porque isso apaga a tipagem dos bindings dentro do `render`. O core oferece
   `defineProperties` e `defineActions`: funções identidade que checam o formato sem perder a inferência.
 
-Tipos do v0: `string`, `int`, `long`, `double`, `bool`, `item` (ItemStack), `list(T)`, `object({...})`.
+Tipos do v0: `string`, `int`, `long`, `double`, `bool`, `item` (ItemStack), `asset`, `list(T)`, `object({...})`.
 
 - **Opcional.** `t.string().optional()` aceita valor ausente ou `null`, e os dois significam "sem valor". No contrato:
   `{ "kind": "string", "optional": true }`. Vale para qualquer tipo.
@@ -140,21 +155,24 @@ Tipos do v0: `string`, `int`, `long`, `double`, `bool`, `item` (ItemStack), `lis
   torna o campo opcional. O cliente usa o padrão quando o valor está ausente ou é `null` (não quando é `""`). Só pode
   aparecer em `properties`, nunca no schema de uma ação. No contrato: `{ "kind": "string", "default": "…" }`.
 - **Decimal.** `double` serve para dados e payload. Para aparecer na tela, o servidor manda um label formatado.
+- **Asset escolhido pelo servidor.** `t.asset()` recebe o **nome** de um asset declarado em
+  `defineScreen({ assets: { fire, water } })`, nunca um hash nem uma URL. Ver §5.3.
 - As properties são o **view model** da tela: o servidor manda tudo pronto para exibir. Ver `docs/properties.md`.
 
 ### 5.2 Componentes do v0
 
-| Componente      | Props principais                                                                  | Filhos           |
-|-----------------|-----------------------------------------------------------------------------------|------------------|
-| `column`, `row` | `gap`, `padding`, `align`, `justify`, `width`, `height`                           | sim              |
-| `text`          | `value` (string, ou binding de `string`/`int`/`long`), `color`, `align`, `shadow` | não              |
-| `item`          | `value` (binding de `item`), `size`                                               | não              |
-| `button`        | `action`, `payload`, `disabled` (bool ou binding de bool)                         | sim              |
-| `list`          | `source` (binding de `list`); o filho é um template com o item no escopo          | sim              |
-| `show`          | `when` (binding de qualquer tipo), `fallback` (sub-árvore)                        | sim              |
-| `match`         | `value` (binding de `string`/`int`/`long`/`bool`)                                 | `case`/`default` |
-| `case`          | `is` (literal do tipo do `value` do `match`)                                      | sim              |
-| `default`       | —                                                                                 | sim              |
+| Componente      | Props principais                                                                          | Filhos           |
+|-----------------|-------------------------------------------------------------------------------------------|------------------|
+| `column`, `row` | `gap`, `padding`, `align`, `justify`, `width`, `height`                                   | sim              |
+| `text`          | `value` (string, ou binding de `string`/`int`/`long`), `color`, `font`, `align`, `shadow` | não              |
+| `image`         | `src` (asset de imagem, ou binding de `asset`), `width`, `height`                         | não              |
+| `item`          | `value` (binding de `item`), `size`                                                       | não              |
+| `button`        | `action`, `payload`, `disabled` (bool ou binding de bool)                                 | sim              |
+| `list`          | `source` (binding de `list`); o filho é um template com o item no escopo                  | sim              |
+| `show`          | `when` (binding de qualquer tipo), `fallback` (sub-árvore)                                | sim              |
+| `match`         | `value` (binding de `string`/`int`/`long`/`bool`)                                         | `case`/`default` |
+| `case`          | `is` (literal do tipo do `value` do `match`)                                              | sim              |
+| `default`       | —                                                                                         | sim              |
 
 Tamanhos em pixels de GUI, respeitando a GUI scale. `width`/`height` aceitam número, `fit` ou `fill`.
 
@@ -169,10 +187,35 @@ Tamanhos em pixels de GUI, respeitando a GUI scale. `width`/`height` aceitam nú
   nenhum bate ou o valor está ausente. `case` e `default` só existem dentro de `match`, e `fallback` só dentro de
   `show`.
 
-No M3: `grid`, `input`, `scroll` e `image`. O `image` só aceita texturas de resource pack por identificador; o cliente
-nunca decodifica imagem enviada pelo servidor.
+- **`text.font`** aceita um asset de fonte.
+- **`image`** desenha um PNG, JPEG ou GIF (animado). Sem `width`/`height`, usa as dimensões declaradas no contrato.
 
-### 5.3 Bindings
+No M3: `grid`, `input` e `scroll`.
+
+### 5.3 Assets
+
+Imagens e fontes são importadas no TSX e viram entradas do contrato:
+
+```json
+"assets": {
+  "<sha256>": { "type": "image/png", "bytes": 48213, "width": 128, "height": 64 },
+  "<sha256>": { "type": "image/gif", "bytes": 90112, "width": 32, "height": 32, "frames": 12 },
+  "<sha256>": { "type": "font/ttf", "bytes": 21504 }
+},
+"assetNames": { "fire": "<sha256>", "water": "<sha256>" }
+```
+
+- Um componente referencia um asset com `{ "$asset": "<sha256>" }`. O hash precisa estar em `assets`, com um tipo
+  aceito pela prop.
+- `assetNames` mapeia os nomes que o servidor pode mandar numa property `t.asset()`. O cliente só baixa o que está no
+  contrato, e o contrato é verificado pelo hash que veio pela conexão do jogo. Então **um único hash valida todo o
+  conteúdo** da tela.
+- Formatos do v0: `image/png`, `image/jpeg`, `image/gif`, `font/ttf` e `font/otf`. Vídeo e WebP ficam para depois do
+  v0, como mais tipos nesta mesma tabela.
+- Imagens declaram `width` e `height` (e `frames` no GIF), para o layout reservar espaço antes do download e o cliente
+  recusar antes de baixar. Depois do download, o cliente confere o cabeçalho real contra o declarado.
+
+### 5.4 Bindings
 
 - Binding é só um caminho, sem expressões. Dentro de `list`, o escopo inclui o item atual.
 - O caminho atravessa objetos com ponto: `owner.name`, `bidData.currentBid`. Um objeto inteiro também pode ser
@@ -182,12 +225,12 @@ nunca decodifica imagem enviada pelo servidor.
 - No `render`, um binding é um marcador e não o valor. Usar um binding como valor JS (template string, concatenação,
   comparação, `.length`, `.map`) é erro de build. O build avisa sobre property declarada e nunca usada.
 - Todo binding precisa resolver para uma propriedade declarada com tipo compatível com a prop: `text.value` exige
-  string, `item.value` exige item, `list.source` exige list, `disabled` exige bool.
+  string, `item.value` exige item, `image.src` exige asset, `list.source` exige list, `disabled` exige bool.
 - Valores do `payload` são literais ou bindings para campos em escopo. Um campo opcional da ação pode faltar. Um campo
   obrigatório não aceita binding de propriedade opcional sem padrão.
 - O formato exato do binding no JSON deve ser proposto no plano do M1.
 
-### 5.4 Exemplo (ilustrativo, a API final sai do plano)
+### 5.5 Exemplo (ilustrativo, a API final sai do plano)
 
 ```ts
 // examples/shop/main.contract.ts
@@ -244,7 +287,7 @@ export default defineScreen({
 });
 ```
 
-### 5.5 Validação
+### 5.6 Validação
 
 As mesmas regras rodam no `rain build` (TS) e no mod (Java). As fixtures em `schema/fixtures` são a fonte da verdade
 para os dois lados.
@@ -258,7 +301,11 @@ para os dois lados.
 - Limites (valores iniciais, como constantes em `rain-protocol`):
     - contrato: 256 KiB serializado, 2000 nós, profundidade 32, 256 ações, strings de até 1024 caracteres;
     - propriedades por envio: 256 KiB, listas de até 1000 elementos;
+    - propriedades: strings de até 4096 caracteres;
     - payload de interação: 8 KiB e profundidade 8;
+    - assets: 8 MiB cada, 256 e 64 MiB no total por contrato, imagens de até 4096 px por lado, GIF de até 512 frames
+      e 128 MiB decodificados;
+    - IDs de tela e de ação nos pacotes: 256 bytes;
     - profundidade máxima de qualquer JSON: 128, checada no parser streaming com contador próprio (não depender do
       limite de aninhamento da biblioteca de JSON). Ver `docs/decisions.md` §3.
 - Erros têm um código estável (`UNKNOWN_COMPONENT`, `UNDECLARED_BINDING`, `LIMIT_EXCEEDED`, `INVALID_DEFAULT`,
@@ -267,40 +314,54 @@ para os dois lados.
 
 ## 6. Protocolo
 
-Todos os codecs ficam em `rain-protocol`, em Java puro. Os módulos de versão só embrulham esses codecs nos custom
-payloads.
+O protocolo tem duas partes: **pacotes** na conexão do jogo, para tudo que é por jogador, e **download HTTP**, só para
+conteúdo estático endereçado por hash. Todos os codecs dos pacotes ficam em `rain-protocol`, em Java puro. Os módulos de
+versão só embrulham esses codecs nos custom payloads.
+
+### Download de conteúdo
+
+```
+GET <assetBaseUrl>/<sha256 em hex minúsculo>   →   os bytes do arquivo
+```
+
+- Serve contratos e assets igualmente. Qualquer servidor de arquivos estáticos atende: o servidor HTTP base do Rain
+  (JDK `HttpServer`, em `rain-server`) ou o que o dev escolher, bastando publicar `dist/assets/` e os contratos.
+- HTTP e HTTPS são aceitos: a integridade vem do hash, não do transporte.
+- O cliente não segue redirect para outro host, não envia cookies nem credenciais, usa timeout e limita o tamanho pelo
+  declarado no contrato.
 
 ### Servidor → cliente
 
 | Pacote                | Campos                                                                 |
 |-----------------------|------------------------------------------------------------------------|
-| `Hello`               | `protocolVersion`                                                      |
+| `Hello`               | `protocolVersion`, `assetBaseUrl`                                      |
 | `OpenScreen`          | `instanceId`, `screenId`, `contractHash`, `revision`, `propertiesJson` |
-| `ContractChunk`       | `contractHash`, `index`, `total`, `bytes`                              |
 | `UpdateScreen`        | `instanceId`, `revision`, `propertiesJson`                             |
 | `InteractionRejected` | `instanceId`, `revision`                                               |
 | `CloseScreen`         | `instanceId`                                                           |
 
 ### Cliente → servidor
 
-| Pacote            | Campos                                              |
-|-------------------|-----------------------------------------------------|
-| `Hello`           | `protocolVersion`                                   |
-| `RequestContract` | `contractHash`                                      |
-| `Interact`        | `instanceId`, `revision`, `actionId`, `payloadJson` |
-| `ScreenClosed`    | `instanceId`                                        |
+| Pacote         | Campos                                              |
+|----------------|-----------------------------------------------------|
+| `Hello`        | `protocolVersion`                                   |
+| `Interact`     | `instanceId`, `revision`, `actionId`, `payloadJson` |
+| `ScreenClosed` | `instanceId`                                        |
+| `ScreenFailed` | `instanceId`, `reason`                              |
 
 ### Regras
 
 - **Handshake no join.** Se a versão do protocolo for incompatível, o servidor não abre telas Rain para esse jogador e
   loga. Kick com mensagem fica como opção de configuração.
-- **Hash.** O cliente calcula o SHA-256 do contrato remontado antes de usar. Se não bater, descarta.
+- **Hash.** O cliente calcula o SHA-256 de todo arquivo baixado antes de usar. Se não bater, descarta.
 - **JSON canônico.** O build grava o contrato com chaves ordenadas, para o hash ser estável entre builds idênticos.
-- **Chunks.** O tamanho de cada chunk vem do limite de custom payload da versão (seção 4.3). O cliente limita o total
-  remontado, descarta chunks duplicados ou fora de faixa e expira remontagens incompletas.
-- `**RequestContract`.** O servidor só atende hashes de contratos carregados, com rate limit.
-- **Cache.** No v0, só em memória, por sessão.
-- `**instanceId`.** Gerado pelo servidor e nunca reutilizado na mesma sessão.
+- **`ScreenFailed`.** Enviado quando a tela não pode abrir (download falhou, consentimento recusado, contrato ou
+  properties inválidos), para o servidor liberar a instância. `reason` é um código curto, só para log.
+- **Cache.** Em disco, por hash, compartilhado entre servidores, com limite total (512 MiB por padrão, configurável no
+  cliente) e remoção por LRU.
+- **`instanceId`.** Gerado pelo servidor e nunca reutilizado na mesma sessão.
+- **Item nas properties.** Um valor `item` é o base64 dos bytes do codec de rede de ItemStack do vanilla, opaco para o
+  protocolo. Os IDs de registro dentro dele valem só para aquela conexão, então properties nunca são cacheadas.
 
 ## 7. Servidor
 
@@ -339,7 +400,8 @@ RainScreenEvents.INTERACTION_RECEIVED.subscribe(event -> {
 - `putItem` delega a codificação para o módulo de versão, que usa o codec vanilla de ItemStack daquela versão. O mod
   decodifica com o mesmo codec.
 - Os acessores do payload (`getString`, `getInt`, `getLong`, `getBool`, ...) lançam exceção tipada se o tipo não bater.
-  Nunca convertem.
+  Nunca convertem. Para campo opcional, `findString`, `findInt`, ... devolvem `null` quando não há valor, anotados com
+  `@Nullable` (JSpecify), para o Kotlin enxergar `String?`.
 
 ### 7.2 Dispatcher
 
@@ -368,10 +430,15 @@ A lógica do cliente fica em `rain-client-core`. Os módulos de versão só dese
 - Engine de layout própria e simples (row/column com gap, padding, align, justify e tamanhos fixo/fit/fill), testável
   sem Minecraft.
 - `item` é desenhado com o renderer de item vanilla (glint, modelo, contagem).
+- **Consentimento.** Na primeira vez que um servidor pede download, o jogador vê o host e o tamanho e escolhe permitir
+  ou recusar. A escolha fica lembrada por servidor.
+- **Assets.** Download só dos hashes do contrato, verificação do hash, cache em disco, e decodificação só depois de
+  conferir no cabeçalho que dimensões, frames e tamanho estão dentro do declarado e dos limites.
 - Ao clicar num botão, ele entra em estado pendente (visual) e ignora novos cliques até chegar `UpdateScreen`,
   `InteractionRejected` ou `CloseScreen`, ou até um timeout de 5s.
 - Contrato ou propriedades inválidos: a tela não abre, o jogador vê um erro genérico e os detalhes vão para o log.
-- Nenhum acesso a arquivo, clipboard, URL ou comando a pedido do servidor.
+- Nenhum acesso a arquivo fora do próprio cache, clipboard, URL fora do `assetBaseUrl` ou comando a pedido do
+  servidor.
 
 ## 9. TypeScript
 
@@ -402,12 +469,23 @@ A lógica do cliente fica em `rain-client-core`. Os módulos de versão só dese
 
 - servidor malicioso, contra o jogador;
 - cliente modificado, contra o servidor;
-- rede, entre os dois.
+- rede, entre os dois;
+- host de assets malicioso ou comprometido, contra o jogador.
 
 **Invariantes:** as decisões da seção 3.
 
-**Fora do escopo do v0:** containers com item real (mover itens), HUD, links, imagens enviadas pelo servidor, handlers
-assíncronos, adaptador Paper.
+**Download de conteúdo:**
+
+- o hash do contrato vem pela conexão do jogo, e o contrato fixa o hash de cada asset. Um host comprometido não
+  consegue trocar conteúdo, só deixar de servir;
+- a decodificação de imagem e fonte é a parte de maior risco: o cliente usa os decoders que o Minecraft já traz e só
+  decodifica depois de checar no cabeçalho dimensões, frames e tamanho;
+- o host fica sabendo o IP do jogador, como já acontece com o resource pack. Por isso existe o consentimento, que mostra
+  o host;
+- sem redirect para outro host, sem cookies, sem credenciais, com timeout e com tamanho máximo pelo declarado.
+
+**Fora do escopo do v0:** containers com item real (mover itens), HUD, links, vídeo, handlers assíncronos, adaptador
+Paper.
 
 ## 11. Marcos
 
@@ -437,10 +515,22 @@ Schema v0, fixtures válidas e inválidas, `@rain-ui/core`, `rain build`, e mode
 - toda fixture válida passa e toda inválida falha com o código esperado, nos dois lados (TS e Java);
 - cada limite é testado na borda: o valor N passa e N+1 falha.
 
+### M1.5 — Assets no build
+
+Imports de asset no TSX, `t.asset()`, `defineScreen({ assets })`, `image`, `text.font`, e a tabela de assets validada
+nos dois lados.
+
+**Pronto quando:**
+
+- `rain build` grava `dist/assets/<sha256>` com os bytes originais e lista os assets no manifesto;
+- um mesmo arquivo usado por duas telas vira um asset só;
+- asset corrompido, de formato não suportado ou acima dos limites falha o build com código e caminho;
+- as fixtures de assets passam nos dois lados (TS e Java).
+
 ### M2 — Ponta a ponta
 
-Pacotes, `rain-server`, `rain-client-core` e os dois módulos de versão, com `row`, `column`, `text`, `item`, `button` e
-`list`.
+Pacotes, download de conteúdo, `rain-server` (com o servidor HTTP base), `rain-client-core` e os dois módulos de
+versão, com todos os componentes do v0.
 
 **Pronto quando** (testes unitários, testes do dispatcher e teste manual nas duas versões):
 
@@ -452,14 +542,21 @@ Pacotes, `rain-server`, `rain-client-core` e os dois módulos de versão, com `r
 - handler sem resultado tira o cliente do estado pendente;
 - interação com `instanceId` de outro jogador é rejeitada;
 - payload fora do schema é rejeitado antes de chegar ao evento;
-- `Properties` com chave não declarada falha no `open`, no servidor.
+- `Properties` com chave não declarada falha no `open`, no servidor;
+- o contrato e os assets baixam do servidor HTTP base e de um servidor estático externo;
+- arquivo com hash errado é descartado e a tela não abre, e o servidor recebe `ScreenFailed`;
+- consentimento recusado não baixa nada;
+- imagem acima dos limites é recusada antes de decodificar.
 
 ### M3 — Expansão
 
-- `grid`, `scroll` e `image` (por identificador de resource pack);
+- `grid` e `scroll`;
 - `input`, com os valores entrando no payload via binding;
-- `rain dev` com hot reload;
-- cache em disco verificado por hash.
+- `rain dev` com hot reload.
+
+### Depois do v0
+
+- Vídeo e WebP, como novos tipos de asset.
 
 ## 12. Como trabalhar
 

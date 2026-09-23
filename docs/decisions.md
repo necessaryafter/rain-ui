@@ -134,5 +134,41 @@ inheritance rules of a plugin's model.
 - **M3:** a `countdown` component taking an epoch-millis `long`, so timers do not need one update per second; local
   client state for purely visual toggles such as tabs; sending only what changed in an update; a declarative number
   format prop.
+- **M2.4:** confirm in the Loom sources that `lwjgl-stb` and `lwjgl-freetype` ship with both target versions, since the
+  image and font decoders rely on them.
+- **After v0:** video and WebP as new asset types.
 - **After v0:** a type-aware lint rule (`no-binding-in-condition`) for `if (p.x)`, `!p.x` and `p.x && …`, which the
   build cannot detect at runtime.
+
+## 8. Static content over HTTP, assets in the contract
+
+**Status:** Decided before M2, replacing contract chunks over the game connection
+
+**What:**
+
+| Topic                  | Decision                                                                                                  |
+|------------------------|-----------------------------------------------------------------------------------------------------------|
+| Transport              | HTTP only downloads static, hash-addressed content (contracts and assets). Per-player data (properties, interactions, responses) stays on the game connection. |
+| HTTP protocol          | `GET <assetBaseUrl>/<sha256>` returns the bytes. Any static file server works.                          |
+| Hosting                | A base server in `rain-server` (JDK `HttpServer`, no dependency) serves `dist/assets/`; devs can host it anywhere and set `assetBaseUrl`. |
+| Integrity              | The contract hash arrives over the game connection and the contract pins every asset hash, so one hash verifies all content. |
+| HTTP vs HTTPS          | Both accepted; integrity comes from the hash. No cross-host redirects, no cookies or credentials, timeouts. |
+| Consent                | One prompt per server showing the host and size, like the vanilla resource pack. Refusing sends `ScreenFailed`. |
+| Formats (v0)           | PNG, JPEG, GIF (animated), TTF, OTF, decodable with `lwjgl-stb` and `lwjgl-freetype` already in the client. |
+| Limits                 | 8 MiB per asset; 256 assets and 64 MiB per contract; images up to 4096 px per side; GIF up to 512 frames and 128 MiB decoded; client cache 512 MiB LRU. |
+| Contract format        | `assets: { <sha256>: { type, bytes, width?, height?, frames? } }`, `assetNames: { name: <sha256> }`, references as `{ "$asset": <sha256> }`. |
+| Server-chosen assets   | `t.asset()` properties carry a name from `defineScreen({ assets })`, never a hash or URL.               |
+| Components             | `image` moves into v0; `text` gains `font`.                                                              |
+| Packets                | `RequestContract` and `ContractChunk` are removed; server `Hello` gains `assetBaseUrl`; client `ScreenFailed(instanceId, reason)` is added. |
+| Items in properties    | Base64 of the vanilla network ItemStack codec, opaque to the protocol.                                   |
+| Optional in Java API   | `findX` accessors return `null` annotated with JSpecify `@Nullable` (compileOnly), so Kotlin sees `T?`.  |
+| New limits             | Property strings up to 4096 characters; screen and action ids in packets up to 256 bytes.                |
+
+**Why:** Rich UIs need fonts, images and GIFs now and video later. Vanilla resource packs cap textures in atlases, have
+no video, and reload every client resource on each push, which is unusable for UI. Downloading by hash keeps the
+spirit of closed decision 4: the vanilla resource pack already lets a server point the client at any URL, with a hash
+and a prompt, and this adds nothing beyond that. Keeping per-player data on the game connection keeps ordering,
+revisions and authentication where they already work.
+
+**Impact:** Spec §3.4, §4, §5.2–5.3, §6, §8, §10 and §11 were rewritten. A new milestone, M1.5, adds assets to the
+build before M2. The disk cache and `image` move from M3 into v0.
