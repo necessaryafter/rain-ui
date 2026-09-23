@@ -7,20 +7,34 @@ import com.rainframework.ui.protocol.Limits;
 import com.rainframework.ui.protocol.TypeSchema;
 import lombok.RequiredArgsConstructor;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 public final class ContractValidator {
-    private static final Set<String> COMPONENT_TYPES = Set.of("column", "row", "text", "item", "button", "list");
     private static final Pattern ID_PATTERN = Pattern.compile("^[a-z0-9_-]+:[a-z0-9_/-]+$");
+    private static final Pattern COLOR_PATTERN = Pattern.compile("^#[0-9A-Fa-f]{6}$");
     private static final Map<String, Set<String>> COMPONENT_PROPS = Map.ofEntries(
-            Map.entry("text", Set.of("value", "color", "align", "shadow")),
             Map.entry("column", Set.of("gap", "padding", "align", "justify", "width", "height")),
             Map.entry("row", Set.of("gap", "padding", "align", "justify", "width", "height")),
+            Map.entry("text", Set.of("value", "color", "align", "shadow")),
             Map.entry("item", Set.of("value", "size")),
             Map.entry("button", Set.of("action", "payload", "disabled")),
-            Map.entry("list", Set.of("source")));
+            Map.entry("list", Set.of("source")),
+            Map.entry("show", Set.of("when")),
+            Map.entry("match", Set.of("value")),
+            Map.entry("case", Set.of("is")),
+            Map.entry("default", Set.of()),
+            Map.entry("fallback", Set.of()));
+
+    // Components that only exist as a slot of a specific parent.
+    private static final Map<String, String> SLOT_PARENTS = Map.of(
+            "case", "match",
+            "default", "match",
+            "fallback", "show");
 
     public ValidationResult validate(Contract contract) {
         final var basicChecks = validateBasicConstraints(contract);
@@ -28,8 +42,18 @@ public final class ContractValidator {
             return basicChecks;
         }
 
-        final var validator = new NodeValidator(contract.properties(), contract.actions());
-        return validator.validateComponentNode(contract.root(), "root", contract.properties(), 0);
+        final var propertiesCheck = validateSchemas(contract.properties(), "properties", true);
+        if (!propertiesCheck.isValid()) {
+            return propertiesCheck;
+        }
+
+        final var actionsCheck = validateSchemas(contract.actions(), "actions", false);
+        if (!actionsCheck.isValid()) {
+            return actionsCheck;
+        }
+
+        final var validator = new NodeValidator(contract.actions());
+        return validator.validateNode(contract.root(), "root", contract.properties(), 0, null);
     }
 
     private ValidationResult validateBasicConstraints(Contract contract) {
@@ -54,321 +78,386 @@ public final class ContractValidator {
         return ValidationResult.ok();
     }
 
+    private static ValidationResult validateSchemas(Map<String, TypeSchema> schemas, String path, boolean allowDefault) {
+        for (final var entry : schemas.entrySet()) {
+            final var result = validateSchema(entry.getValue(), path + "." + entry.getKey(), allowDefault);
+            if (!result.isValid()) {
+                return result;
+            }
+        }
+
+        return ValidationResult.ok();
+    }
+
+    private static ValidationResult validateSchema(TypeSchema schema, String path, boolean allowDefault) {
+        if (schema instanceof TypeSchema.OptionalType optional && optional.hasDefault()) {
+            final var defaultCheck = validateDefault(optional, path, allowDefault);
+            if (!defaultCheck.isValid()) {
+                return defaultCheck;
+            }
+        }
+
+        final var shape = TypeSchema.unwrap(schema);
+        if (shape instanceof TypeSchema.ListType list) {
+            return validateSchema(list.of(), path + ".of", allowDefault);
+        }
+
+        if (shape instanceof TypeSchema.ObjectType object) {
+            return validateSchemas(object.fields(), path + ".fields", allowDefault);
+        }
+
+        return ValidationResult.ok();
+    }
+
+    // Defaults are only meaningful for properties the server sends; an action payload comes from the client.
+    private static ValidationResult validateDefault(TypeSchema.OptionalType optional, String path, boolean allowDefault) {
+        final var value = optional.defaultValue();
+        if (!allowDefault || !isScalar(optional.inner()) || !matchesKind(value, optional.inner())) {
+            return ValidationResult.fail(ValidationErrorCode.INVALID_DEFAULT, path);
+        }
+
+        if (value.isTextual() && value.asText().length() > Limits.MAX_STRING_LENGTH) {
+            return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, path);
+        }
+
+        return ValidationResult.ok();
+    }
+
+    private static boolean isScalar(TypeSchema schema) {
+        return schema instanceof TypeSchema.StringType
+                || schema instanceof TypeSchema.IntType
+                || schema instanceof TypeSchema.LongType
+                || schema instanceof TypeSchema.DoubleType
+                || schema instanceof TypeSchema.BoolType;
+    }
+
+    private static boolean isMatchable(TypeSchema schema) {
+        return isScalar(schema) && !(schema instanceof TypeSchema.DoubleType);
+    }
+
+    private static boolean matchesKind(JsonNode value, TypeSchema schema) {
+        return switch (schema) {
+            case TypeSchema.StringType ignored -> value.isTextual();
+            case TypeSchema.IntType ignored -> value.isIntegralNumber();
+            case TypeSchema.LongType ignored -> value.isIntegralNumber();
+            case TypeSchema.DoubleType ignored -> value.isNumber();
+            case TypeSchema.BoolType ignored -> value.isBoolean();
+            default -> false;
+        };
+    }
+
+    private static boolean isBinding(JsonNode node) {
+        return node != null && node.isObject() && node.size() == 1 && node.path("$bind").isTextual();
+    }
+
     @RequiredArgsConstructor
     private static class NodeValidator {
-        private final Map<String, TypeSchema> rootProperties;
         private final Map<String, TypeSchema> actions;
         private int nodeCount = 0;
 
-        ValidationResult validateComponentNode(ComponentNode node, String path, Map<String, TypeSchema> scope, int depth) {
-            final var limitCheck = checkLimits(path, depth);
-            if (!limitCheck.isValid()) {
-                return limitCheck;
+        ValidationResult validateNode(ComponentNode node, String path, Map<String, TypeSchema> scope, int depth, String parentType) {
+            nodeCount++;
+            if (nodeCount > Limits.MAX_NODES || depth > Limits.MAX_DEPTH) {
+                return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, path);
             }
 
-            if (!COMPONENT_TYPES.contains(node.type())) {
+            if (!COMPONENT_PROPS.containsKey(node.type())) {
                 return ValidationResult.fail(ValidationErrorCode.UNKNOWN_COMPONENT, path);
             }
 
-            final var propsCheck = validateNodeProps(node, path, scope);
+            final var slotParent = SLOT_PARENTS.get(node.type());
+            if (slotParent != null && !slotParent.equals(parentType)) {
+                return ValidationResult.fail(ValidationErrorCode.MISPLACED_COMPONENT, path);
+            }
+
+            final var propsCheck = validateProps(node, path, scope);
             if (!propsCheck.isValid()) {
                 return propsCheck;
             }
 
-            return validateNodeChildren(node, path, scope, depth);
+            return validateChildren(node, path, scope, depth);
         }
 
-        private ValidationResult checkLimits(String path, int depth) {
-            nodeCount++;
-            if (nodeCount > Limits.MAX_NODES) {
-                return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, path);
-            }
+        private ValidationResult validateProps(ComponentNode node, String path, Map<String, TypeSchema> scope) {
+            final var allowed = COMPONENT_PROPS.get(node.type());
 
-            if (depth > Limits.MAX_DEPTH) {
-                return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, path);
-            }
-
-            return ValidationResult.ok();
-        }
-
-        private ValidationResult validateNodeProps(ComponentNode node, String path, Map<String, TypeSchema> scope) {
-            final var allowedProps = COMPONENT_PROPS.getOrDefault(node.type(), Set.of());
-            for (final var propKey : node.props().keySet()) {
-                if (!allowedProps.contains(propKey)) {
-                    return ValidationResult.fail(ValidationErrorCode.UNKNOWN_PROP, path + ".props." + propKey);
+            for (final var entry : node.props().entrySet()) {
+                final var propPath = path + ".props." + entry.getKey();
+                if (!allowed.contains(entry.getKey())) {
+                    return ValidationResult.fail(ValidationErrorCode.UNKNOWN_PROP, propPath);
                 }
 
-                final var propValue = node.props().get(propKey);
-                final var propValidation = validateProp(node.type(), propKey, propValue, path + ".props." + propKey, scope);
-                if (!propValidation.isValid()) {
-                    return propValidation;
+                final var result = validateProp(node.type() + "." + entry.getKey(), entry.getValue(), propPath, scope);
+                if (!result.isValid()) {
+                    return result;
                 }
             }
 
-            // Fix B: validate button payload against action schema (paired validation)
             if (node.type().equals("button") && node.props().containsKey("payload")) {
-                final var payloadValidation = validateButtonPayload(node, path, scope);
-                if (!payloadValidation.isValid()) {
-                    return payloadValidation;
-                }
+                return validateButtonPayload(node, path + ".props.payload", scope);
             }
 
             return ValidationResult.ok();
         }
 
-        private ValidationResult validateNodeChildren(ComponentNode node, String path, Map<String, TypeSchema> scope, int depth) {
-            for (int i = 0; i < node.children().size(); i++) {
-                final var child = node.children().get(i);
+        private ValidationResult validateProp(String prop, JsonNode value, String path, Map<String, TypeSchema> scope) {
+            return switch (prop) {
+                case "text.value" -> validateTextValue(value, path, scope);
+                case "text.color" -> validateColor(value, path, scope);
+                case "column.gap", "column.padding", "row.gap", "row.padding" -> value.isNumber()
+                        ? ValidationResult.ok()
+                        : ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
+                case "item.value" -> validateBinding(value, path, scope, TypeSchema.ItemType.class::isInstance);
+                case "button.action" -> validateAction(value, path);
+                case "button.disabled" -> value.isBoolean()
+                        ? ValidationResult.ok()
+                        : validateBinding(value, path, scope, TypeSchema.BoolType.class::isInstance);
+                case "list.source" -> validateBinding(value, path, scope, TypeSchema.ListType.class::isInstance);
+                case "show.when" -> validateBinding(value, path, scope, schema -> true);
+                case "match.value" -> validateBinding(value, path, scope, ContractValidator::isMatchable);
+                default -> ValidationResult.ok();
+            };
+        }
+
+        private ValidationResult validateAction(JsonNode value, String path) {
+            if (!value.isTextual()) {
+                return ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
+            }
+
+            if (!actions.containsKey(value.asText())) {
+                return ValidationResult.fail(ValidationErrorCode.UNDECLARED_ACTION, path);
+            }
+
+            return ValidationResult.ok();
+        }
+
+        private ValidationResult validateChildren(ComponentNode node, String path, Map<String, TypeSchema> scope, int depth) {
+            final var children = node.children();
+
+            if (node.type().equals("match")) {
+                final var slotsCheck = validateMatchSlots(node, children, path, scope);
+                if (!slotsCheck.isValid()) {
+                    return slotsCheck;
+                }
+            }
+
+            for (int i = 0; i < children.size(); i++) {
+                final var child = children.get(i);
                 final var childPath = path + ".children[" + i + "]";
 
-                final var childResult = validateChild(node, child, childPath, scope, depth);
-                if (!childResult.isValid()) {
-                    return childResult;
+                if (child.type().equals("fallback") && i != children.size() - 1) {
+                    return ValidationResult.fail(ValidationErrorCode.MISPLACED_COMPONENT, childPath);
+                }
+
+                final var childScope = node.type().equals("list") && i == 0 ? listItemScope(node, scope) : scope;
+                final var result = validateNode(child, childPath, childScope, depth + 1, node.type());
+                if (!result.isValid()) {
+                    return result;
                 }
             }
+
             return ValidationResult.ok();
-        }
-
-        private ValidationResult validateChild(ComponentNode parent, ComponentNode child, String childPath, Map<String, TypeSchema> scope, int depth) {
-            if (parent.type().equals("list")) {
-                final var sourceBinding = parent.props().get("source");
-                if (isBinding(sourceBinding)) {
-                    final var bindPath = sourceBinding.get("$bind").asText();
-                    final var bindType = scope.get(bindPath);
-                    if (bindType instanceof TypeSchema.ListType listType && listType.of() instanceof TypeSchema.ObjectType objectType) {
-                        return validateComponentNode(child, childPath, objectType.fields(), depth + 1);
-                    }
-                }
-            }
-            return validateComponentNode(child, childPath, scope, depth + 1);
-        }
-
-        private ValidationResult validateProp(String componentType, String propName, JsonNode propValue, String path, Map<String, TypeSchema> scope) {
-            return switch (componentType) {
-                case "text" -> validateTextProp(propName, propValue, path, scope);
-                case "column", "row" -> validateColumnRowProp(propName, propValue, path, scope);
-                case "item" -> validateItemProp(propName, propValue, path, scope);
-                case "button" -> validateButtonProp(propName, propValue, path, scope);
-                case "list" -> validateListProp(propName, propValue, path, scope);
-                default -> ValidationResult.ok();
-            };
-        }
-
-        private ValidationResult validateTextProp(String propName, JsonNode propValue, String path, Map<String, TypeSchema> scope) {
-            return switch (propName) {
-                case "value" -> validateStringOrBinding(propValue, path, scope);
-                case "color", "align", "shadow" -> ValidationResult.ok(); // Skip strict type check for these
-                default -> ValidationResult.ok();
-            };
-        }
-
-        private ValidationResult validateColumnRowProp(String propName, JsonNode propValue, String path, Map<String, TypeSchema> scope) {
-            return switch (propName) {
-                case "gap", "padding" -> {
-                    if (!propValue.isNumber()) {
-                        yield ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
-                    }
-                    yield ValidationResult.ok();
-                }
-                case "align", "justify", "width", "height" -> ValidationResult.ok(); // Skip strict type check
-                default -> ValidationResult.ok();
-            };
-        }
-
-        private ValidationResult validateItemProp(String propName, JsonNode propValue, String path, Map<String, TypeSchema> scope) {
-            return switch (propName) {
-                case "value" -> {
-                    if (!isBinding(propValue)) {
-                        yield ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
-                    }
-                    final var bindPath = propValue.get("$bind").asText();
-                    final var bindType = scope.get(bindPath);
-                    if (bindType == null) {
-                        yield ValidationResult.fail(ValidationErrorCode.UNDECLARED_BINDING, path);
-                    }
-                    if (!(bindType instanceof TypeSchema.ItemType)) {
-                        yield ValidationResult.fail(ValidationErrorCode.BINDING_TYPE_MISMATCH, path);
-                    }
-                    yield ValidationResult.ok();
-                }
-                case "size" -> ValidationResult.ok(); // Skip strict type check
-                default -> ValidationResult.ok();
-            };
-        }
-
-        private ValidationResult validateButtonProp(String propName, JsonNode propValue, String path, Map<String, TypeSchema> scope) {
-            return switch (propName) {
-                case "action" -> {
-                    if (!propValue.isTextual()) {
-                        yield ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
-                    }
-                    final var actionId = propValue.asText();
-                    if (!actions.containsKey(actionId)) {
-                        yield ValidationResult.fail(ValidationErrorCode.UNDECLARED_ACTION, path);
-                    }
-                    yield ValidationResult.ok();
-                }
-                case "payload" -> {
-                    if (!propValue.isObject()) {
-                        yield ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
-                    }
-                    // Extract action id from sibling prop to get payload schema
-                    // This is a simplification — in reality we'd need to thread the action id through
-                    // For now, accept any object payload
-                    yield ValidationResult.ok();
-                }
-                case "disabled" -> {
-                    if (propValue.isBoolean()) {
-                        yield ValidationResult.ok();
-                    }
-                    if (isBinding(propValue)) {
-                        final var bindPath = propValue.get("$bind").asText();
-                        final var bindType = scope.get(bindPath);
-                        if (bindType == null) {
-                            yield ValidationResult.fail(ValidationErrorCode.UNDECLARED_BINDING, path);
-                        }
-                        if (!(bindType instanceof TypeSchema.BoolType)) {
-                            yield ValidationResult.fail(ValidationErrorCode.BINDING_TYPE_MISMATCH, path);
-                        }
-                        yield ValidationResult.ok();
-                    }
-                    yield ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
-                }
-                default -> ValidationResult.ok();
-            };
-        }
-
-        private ValidationResult validateListProp(String propName, JsonNode propValue, String path, Map<String, TypeSchema> scope) {
-            return switch (propName) {
-                case "source" -> {
-                    if (!isBinding(propValue)) {
-                        yield ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
-                    }
-                    final var bindPath = propValue.get("$bind").asText();
-                    final var bindType = scope.get(bindPath);
-                    if (bindType == null) {
-                        yield ValidationResult.fail(ValidationErrorCode.UNDECLARED_BINDING, path);
-                    }
-                    if (!(bindType instanceof TypeSchema.ListType)) {
-                        yield ValidationResult.fail(ValidationErrorCode.BINDING_TYPE_MISMATCH, path);
-                    }
-                    yield ValidationResult.ok();
-                }
-                default -> ValidationResult.ok();
-            };
-        }
-
-        private ValidationResult validateStringOrBinding(JsonNode propValue, String path, Map<String, TypeSchema> scope) {
-            if (propValue.isTextual()) {
-                final var value = propValue.asText();
-                if (value.length() > Limits.MAX_STRING_LENGTH) {
-                    return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, path);
-                }
-                return ValidationResult.ok();
-            }
-            if (isBinding(propValue)) {
-                final var bindPath = propValue.get("$bind").asText();
-                final var bindType = scope.get(bindPath);
-                if (bindType == null) {
-                    return ValidationResult.fail(ValidationErrorCode.UNDECLARED_BINDING, path);
-                }
-                if (!(bindType instanceof TypeSchema.StringType)) {
-                    return ValidationResult.fail(ValidationErrorCode.BINDING_TYPE_MISMATCH, path);
-                }
-                return ValidationResult.ok();
-            }
-            return ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
-        }
-
-        private boolean isBinding(JsonNode node) {
-            return node.isObject() && node.has("$bind") && node.get("$bind").isTextual();
         }
 
         private ValidationResult validateButtonPayload(ComponentNode node, String path, Map<String, TypeSchema> scope) {
-            final var actionNode = node.props().get("action");
-            final var actionId = actionNode != null && actionNode.isTextual() ? actionNode.asText() : null;
-            if (actionId == null || !actions.containsKey(actionId)) {
-                return ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path + ".props.payload");
-            }
-
-            final var actionSchema = actions.get(actionId);
-            final var payloadNode = node.props().get("payload");
-            return validatePayloadValue(payloadNode, actionSchema, path + ".props.payload", scope);
-        }
-
-        private ValidationResult validatePayloadValue(JsonNode value, TypeSchema schema, String path, Map<String, TypeSchema> scope) {
-            if (isBinding(value)) {
-                final var bindPath = value.get("$bind").asText();
-                final var boundType = scope.get(bindPath);
-                if (boundType == null) {
-                    return ValidationResult.fail(ValidationErrorCode.UNDECLARED_BINDING, path);
-                }
-                if (!schema.equals(boundType)) {
-                    return ValidationResult.fail(ValidationErrorCode.BINDING_TYPE_MISMATCH, path);
-                }
-                return ValidationResult.ok();
-            }
-
-            if (schema instanceof TypeSchema.ObjectType objectType) {
-                if (!value.isObject()) {
-                    return ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path);
-                }
-                final var fields = objectType.fields();
-                for (final var key : fields.keySet()) {
-                    if (!value.has(key)) {
-                        return ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path + "." + key);
-                    }
-                }
-                for (final var it = value.fieldNames(); it.hasNext(); ) {
-                    final var key = it.next();
-                    if (!fields.containsKey(key)) {
-                        return ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path + "." + key);
-                    }
-                    final var r = validatePayloadValue(value.get(key), fields.get(key), path + "." + key, scope);
-                    if (!r.isValid()) {
-                        return r;
-                    }
-                }
-                return ValidationResult.ok();
-            }
-
-            if (schema instanceof TypeSchema.ListType listType) {
-                if (!value.isArray()) {
-                    return ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path);
-                }
-                final var ofSchema = listType.of();
-                for (int i = 0; i < value.size(); i++) {
-                    final var r = validatePayloadValue(value.get(i), ofSchema, path + "[" + i + "]", scope);
-                    if (!r.isValid()) {
-                        return r;
-                    }
-                }
-                return ValidationResult.ok();
-            }
-
-            if (schema instanceof TypeSchema.ItemType) {
+            final var action = node.props().get("action");
+            if (action == null || !action.isTextual() || !actions.containsKey(action.asText())) {
                 return ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path);
             }
 
-            if (schema instanceof TypeSchema.StringType) {
-                return value.isTextual()
-                        ? ValidationResult.ok()
-                        : ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path);
+            return validatePayloadValue(node.props().get("payload"), actions.get(action.asText()), path, scope);
+        }
+    }
+
+    // Checks what only the match itself knows: children are cases or one trailing default, and each case literal has
+    // the type of the matched value and appears once.
+    private static ValidationResult validateMatchSlots(ComponentNode node, List<ComponentNode> children, String path, Map<String, TypeSchema> scope) {
+        final var value = node.props().get("value");
+        final var matched = isBinding(value) ? ResolvedPath.resolve(scope, value.get("$bind").asText()) : null;
+        final var seen = new HashSet<JsonNode>();
+
+        for (int i = 0; i < children.size(); i++) {
+            final var child = children.get(i);
+            final var childPath = path + ".children[" + i + "]";
+
+            if (child.type().equals("default")) {
+                if (i != children.size() - 1) {
+                    return ValidationResult.fail(ValidationErrorCode.MISPLACED_COMPONENT, childPath);
+                }
+                continue;
             }
 
-            if (schema instanceof TypeSchema.BoolType) {
-                return value.isBoolean()
-                        ? ValidationResult.ok()
-                        : ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path);
+            if (!child.type().equals("case")) {
+                return ValidationResult.fail(ValidationErrorCode.MISPLACED_COMPONENT, childPath);
             }
 
-            if (schema instanceof TypeSchema.IntType || schema instanceof TypeSchema.LongType) {
-                return value.isNumber()
-                        ? ValidationResult.ok()
-                        : ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path);
+            final var literal = child.props().get("is");
+            final var literalPath = childPath + ".props.is";
+            if (literal == null || matched != null && !matchesKind(literal, matched.schema())) {
+                return ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, literalPath);
             }
 
+            if (!seen.add(literal)) {
+                return ValidationResult.fail(ValidationErrorCode.DUPLICATE_CASE, literalPath);
+            }
+        }
+
+        return ValidationResult.ok();
+    }
+
+    private static ValidationResult validateTextValue(JsonNode value, String path, Map<String, TypeSchema> scope) {
+        if (!value.isTextual()) {
+            return validateBinding(value, path, scope, schema -> schema instanceof TypeSchema.StringType
+                    || schema instanceof TypeSchema.IntType
+                    || schema instanceof TypeSchema.LongType);
+        }
+
+        if (value.asText().length() > Limits.MAX_STRING_LENGTH) {
+            return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, path);
+        }
+
+        return ValidationResult.ok();
+    }
+
+    // A bad color that arrives at runtime through a binding falls back to the default color on the client.
+    private static ValidationResult validateColor(JsonNode value, String path, Map<String, TypeSchema> scope) {
+        if (!value.isTextual()) {
+            return validateBinding(value, path, scope, TypeSchema.StringType.class::isInstance);
+        }
+
+        if (!COLOR_PATTERN.matcher(value.asText()).matches()) {
+            return ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
+        }
+
+        return ValidationResult.ok();
+    }
+
+    private static ValidationResult validateBinding(JsonNode value, String path, Map<String, TypeSchema> scope, Predicate<TypeSchema> accepts) {
+        if (!isBinding(value)) {
+            return ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
+        }
+
+        final var resolved = ResolvedPath.resolve(scope, value.get("$bind").asText());
+        if (resolved == null) {
+            return ValidationResult.fail(ValidationErrorCode.UNDECLARED_BINDING, path);
+        }
+
+        if (!accepts.test(resolved.schema())) {
+            return ValidationResult.fail(ValidationErrorCode.BINDING_TYPE_MISMATCH, path);
+        }
+
+        return ValidationResult.ok();
+    }
+
+    // An unresolvable source is reported by the list's own prop check; the template then falls back to the outer scope.
+    private static Map<String, TypeSchema> listItemScope(ComponentNode node, Map<String, TypeSchema> scope) {
+        final var source = node.props().get("source");
+        if (!isBinding(source)) {
+            return scope;
+        }
+
+        final var itemScope = ResolvedPath.itemScopeOf(scope, source.get("$bind").asText());
+        return itemScope == null ? scope : itemScope;
+    }
+
+    private static ValidationResult validatePayloadValue(JsonNode value, TypeSchema schema, String path, Map<String, TypeSchema> scope) {
+        if (isBinding(value)) {
+            final var resolved = ResolvedPath.resolve(scope, value.get("$bind").asText());
+            if (resolved == null) {
+                return ValidationResult.fail(ValidationErrorCode.UNDECLARED_BINDING, path);
+            }
+
+            if (!isAssignable(resolved, schema)) {
+                return ValidationResult.fail(ValidationErrorCode.BINDING_TYPE_MISMATCH, path);
+            }
+
+            return ValidationResult.ok();
+        }
+
+        if (value == null || value.isNull()) {
+            return schema instanceof TypeSchema.OptionalType
+                    ? ValidationResult.ok()
+                    : ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path);
+        }
+
+        return switch (TypeSchema.unwrap(schema)) {
+            case TypeSchema.ObjectType object -> validatePayloadObject(value, object.fields(), path, scope);
+            case TypeSchema.ListType list -> validatePayloadList(value, list.of(), path, scope);
+            case TypeSchema shape -> matchesKind(value, shape)
+                    ? ValidationResult.ok()
+                    : ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path);
+        };
+    }
+
+    private static ValidationResult validatePayloadObject(JsonNode value, Map<String, TypeSchema> fields, String path, Map<String, TypeSchema> scope) {
+        if (!value.isObject()) {
             return ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path);
         }
+
+        for (final var entry : fields.entrySet()) {
+            if (!value.has(entry.getKey()) && !(entry.getValue() instanceof TypeSchema.OptionalType)) {
+                return ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path + "." + entry.getKey());
+            }
+        }
+
+        for (final var it = value.fields(); it.hasNext(); ) {
+            final var entry = it.next();
+            final var fieldPath = path + "." + entry.getKey();
+
+            final var field = fields.get(entry.getKey());
+            if (field == null) {
+                return ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, fieldPath);
+            }
+
+            final var result = validatePayloadValue(entry.getValue(), field, fieldPath, scope);
+            if (!result.isValid()) {
+                return result;
+            }
+        }
+
+        return ValidationResult.ok();
+    }
+
+    private static ValidationResult validatePayloadList(JsonNode value, TypeSchema of, String path, Map<String, TypeSchema> scope) {
+        if (!value.isArray()) {
+            return ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path);
+        }
+
+        for (int i = 0; i < value.size(); i++) {
+            final var result = validatePayloadValue(value.get(i), of, path + "[" + i + "]", scope);
+            if (!result.isValid()) {
+                return result;
+            }
+        }
+
+        return ValidationResult.ok();
+    }
+
+    // A bound value fits a payload field when the shapes match and, if the field is required, the value is always
+    // present.
+    private static boolean isAssignable(ResolvedPath bound, TypeSchema target) {
+        if (!sameShape(bound.schema(), TypeSchema.unwrap(target))) {
+            return false;
+        }
+
+        return !bound.optional() || target instanceof TypeSchema.OptionalType;
+    }
+
+    private static boolean sameShape(TypeSchema a, TypeSchema b) {
+        if (a instanceof TypeSchema.ListType aList && b instanceof TypeSchema.ListType bList) {
+            return sameShape(TypeSchema.unwrap(aList.of()), TypeSchema.unwrap(bList.of()));
+        }
+
+        if (a instanceof TypeSchema.ObjectType aObject && b instanceof TypeSchema.ObjectType bObject) {
+            if (!aObject.fields().keySet().equals(bObject.fields().keySet())) {
+                return false;
+            }
+
+            return aObject.fields().keySet().stream().allMatch(key -> sameShape(
+                    TypeSchema.unwrap(aObject.fields().get(key)),
+                    TypeSchema.unwrap(bObject.fields().get(key))));
+        }
+
+        return a.getClass() == b.getClass();
     }
 }

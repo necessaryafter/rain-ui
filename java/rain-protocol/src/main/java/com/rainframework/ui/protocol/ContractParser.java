@@ -95,11 +95,31 @@ public final class ContractParser {
             throw new ParseException(ValidationErrorCode.UNKNOWN_SCHEMA_VERSION, path);
         }
 
-        final var kind = kindNode.asText();
+        final var base = parseBaseType(node, kindNode.asText(), path);
+
+        final var defaultNode = node.get("default");
+        if (defaultNode != null) {
+            return new TypeSchema.OptionalType(base, defaultNode);
+        }
+
+        final var optionalNode = node.get("optional");
+        if (optionalNode == null) {
+            return base;
+        }
+
+        if (!optionalNode.isBoolean()) {
+            throw new ParseException(ValidationErrorCode.UNKNOWN_SCHEMA_VERSION, path);
+        }
+
+        return optionalNode.asBoolean() ? new TypeSchema.OptionalType(base, null) : base;
+    }
+
+    private TypeSchema parseBaseType(JsonNode node, String kind, String path) throws ParseException {
         return switch (kind) {
             case "string" -> new TypeSchema.StringType();
             case "int" -> new TypeSchema.IntType();
             case "long" -> new TypeSchema.LongType();
+            case "double" -> new TypeSchema.DoubleType();
             case "bool" -> new TypeSchema.BoolType();
             case "item" -> new TypeSchema.ItemType();
             case "list" -> {
