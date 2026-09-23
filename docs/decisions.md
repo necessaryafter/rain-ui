@@ -88,3 +88,13 @@ its own `schemaVersion` so the format can change without guessing.
 **Why:** Screens can live in subdirectories. Classifying by specifier instead of by resolved path keeps workspace
 packages (symlinked outside `node_modules`) out of the scan, same as installed ones. Bun picks the tsconfig from the
 process, not from each file, so relying on it made the build depend on where it was run.
+
+## 5. Lombok in the pure Java modules
+
+**Status:** Decided in M1
+
+**What:** `rain-protocol`, `rain-server` and `rain-client-core` depend on Lombok (`compileOnly` + annotation
+processor, version in `gradle.properties`). The Fabric modules do not, until one needs it.
+
+**Why:** Approved by the maintainer to remove hand-written getters and constructors. It is compile-time only, so it
+adds nothing to the runtime classpath of the mod.

@@ -1,13 +1,14 @@
 package com.rainframework.ui.protocol.validation;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ValidationResult {
     private final boolean valid;
     private final ValidationError error;
-
-    private ValidationResult(boolean valid, ValidationError error) {
-        this.valid = valid;
-        this.error = error;
-    }
 
     public static ValidationResult ok() {
         return new ValidationResult(true, null);
@@ -15,13 +16,5 @@ public final class ValidationResult {
 
     public static ValidationResult fail(ValidationErrorCode code, String path) {
         return new ValidationResult(false, new ValidationError(code, path));
-    }
-
-    public boolean isValid() {
-        return valid;
-    }
-
-    public ValidationError getError() {
-        return error;
     }
 }

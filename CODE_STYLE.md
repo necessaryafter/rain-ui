@@ -513,6 +513,33 @@ Build collections with the type on the constructor: `final var props = new HashM
 
 ---
 
+## Lombok (Java)
+
+Lombok is available in the pure Java modules (`rain-protocol`, `rain-server`, `rain-client-core`). Do not write
+getters, setters or field-assigning constructors by hand.
+
+- Immutable data with no behavior: prefer a `record`. Use `@Value` when the API needs `getX()` accessors or the type
+  cannot be a record.
+- Dependencies and final state: `@RequiredArgsConstructor`.
+- Private constructor behind static factories: `@AllArgsConstructor(access = AccessLevel.PRIVATE)`.
+- Accessors: `@Getter` on the class; `@Setter` only on fields that really change.
+- Write a constructor by hand only when it does more than assign fields, like calling `super(...)` with a message.
+
+```java
+@Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public final class ValidationResult {
+    private final boolean valid;
+    private final ValidationError error;
+
+    public static ValidationResult ok() {
+        return new ValidationResult(true, null);
+    }
+}
+```
+
+---
+
 ## Control Flow
 
 These are mandatory, not preferences:

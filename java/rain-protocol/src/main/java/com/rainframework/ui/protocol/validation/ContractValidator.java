@@ -5,6 +5,7 @@ import com.rainframework.ui.protocol.ComponentNode;
 import com.rainframework.ui.protocol.Contract;
 import com.rainframework.ui.protocol.Limits;
 import com.rainframework.ui.protocol.TypeSchema;
+import lombok.RequiredArgsConstructor;
 
 import java.util.Map;
 import java.util.Set;
@@ -53,15 +54,11 @@ public final class ContractValidator {
         return ValidationResult.ok();
     }
 
+    @RequiredArgsConstructor
     private static class NodeValidator {
         private final Map<String, TypeSchema> rootProperties;
         private final Map<String, TypeSchema> actions;
         private int nodeCount = 0;
-
-        NodeValidator(Map<String, TypeSchema> rootProperties, Map<String, TypeSchema> actions) {
-            this.rootProperties = rootProperties;
-            this.actions = actions;
-        }
 
         ValidationResult validateComponentNode(ComponentNode node, String path, Map<String, TypeSchema> scope, int depth) {
             final var limitCheck = checkLimits(path, depth);
