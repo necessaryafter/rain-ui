@@ -26,6 +26,10 @@ export function validateContract(json: unknown, options?: { sourceBytes?: number
         return { ok: false, error: { code: "LIMIT_EXCEEDED", path: "root" } };
     }
 
+    if (exceedsDepth(contract, Limits.MAX_JSON_DEPTH)) {
+        return { ok: false, error: { code: "LIMIT_EXCEEDED", path: "root" } };
+    }
+
     // Check basic constraints
     if (contract.schemaVersion !== 0) {
         return { ok: false, error: { code: "UNKNOWN_SCHEMA_VERSION", path: "schemaVersion" } };
@@ -328,6 +332,15 @@ class ContractValidator {
         }
         return true;
     }
+}
+
+// Stops descending as soon as the limit is passed, so recursion never goes deeper than maxDepth + 1.
+function exceedsDepth(value: unknown, maxDepth: number): boolean {
+    if (value === null || typeof value !== "object") return false;
+    if (maxDepth === 0) return true;
+
+    const children = Array.isArray(value) ? value : Object.values(value);
+    return children.some((child) => exceedsDepth(child, maxDepth - 1));
 }
 
 function isBinding(value: any): value is { $bind: string } {

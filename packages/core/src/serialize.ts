@@ -7,6 +7,7 @@ import * as crypto from "crypto";
 export interface CompiledScreen {
     id: string;
     contract: Contract;
+    json: string;
     sha256: string;
 }
 
@@ -34,10 +35,10 @@ export function compileScreen(screenDef: ScreenDefinition): CompiledScreen {
     };
 
     // Serialize to canonical JSON (sorted keys) and compute hash
-    const contractJson = JSON.stringify(canonicalize(contract));
-    const sha256 = crypto.createHash("sha256").update(contractJson).digest("hex");
+    const json = JSON.stringify(canonicalize(contract));
+    const sha256 = crypto.createHash("sha256").update(json).digest("hex");
 
-    return { id, contract, sha256 };
+    return { id, contract, json, sha256 };
 }
 
 // Walk raw JSX tree and compile to ComponentNode, resolving bindings/ActionRef

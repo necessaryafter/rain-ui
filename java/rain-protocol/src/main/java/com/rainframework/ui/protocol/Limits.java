@@ -14,7 +14,7 @@ public final class Limits {
     public static final int MAX_LIST_ELEMENTS = 1000;
     public static final int MAX_PAYLOAD_BYTES = 8 * 1024;
     public static final int MAX_PAYLOAD_DEPTH = 8;
-    public static final int MAX_JSON_DEPTH = 32;
+    public static final int MAX_JSON_DEPTH = 128;
 
     private Limits() {
         // static only

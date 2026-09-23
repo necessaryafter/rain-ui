@@ -71,3 +71,20 @@ exists to protect the parser from stack exhaustion; domain nesting is limited by
 
 **Impact:** `Limits.MAX_JSON_DEPTH` changes to 128 in both `rain-protocol` and `@rain-ui/core`. The manifest carries
 its own `schemaVersion` so the format can change without guessing.
+
+## 4. `rain build` discovery and determinism scan
+
+**Status:** Decided in M1
+
+**What:**
+
+- `rain build <dir>` imports every `.ts`/`.tsx`/`.js`/`.jsx` module under `<dir>` recursively, skipping `node_modules`,
+  dot directories, `*.d.ts` and `*.test.*`.
+- The determinism scan follows relative and absolute imports only. A bare specifier (`"lodash"`, `"@rain-ui/core"`)
+  is a dependency and is not scanned, whether or not it resolves into `node_modules`.
+- The CLI configures JSX itself instead of reading the caller's `tsconfig.json`, so a screen builds the same from any
+  working directory.
+
+**Why:** Screens can live in subdirectories. Classifying by specifier instead of by resolved path keeps workspace
+packages (symlinked outside `node_modules`) out of the scan, same as installed ones. Bun picks the tsconfig from the
+process, not from each file, so relying on it made the build depend on where it was run.

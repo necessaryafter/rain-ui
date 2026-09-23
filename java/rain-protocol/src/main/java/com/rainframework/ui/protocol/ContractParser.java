@@ -2,6 +2,7 @@ package com.rainframework.ui.protocol;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rainframework.ui.protocol.validation.JsonLimitChecker;
 import com.rainframework.ui.protocol.validation.ValidationErrorCode;
 
 import java.nio.charset.StandardCharsets;
@@ -12,11 +13,16 @@ import java.util.Map;
 
 public final class ContractParser {
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final int MAX_JSON_DEPTH = Limits.MAX_JSON_DEPTH;
+    private static final JsonLimitChecker limitChecker = new JsonLimitChecker();
 
     public Contract parse(String content) throws ParseException {
         final var contentBytes = content.getBytes(StandardCharsets.UTF_8);
         JsonNode root;
+
+        final var limits = limitChecker.checkContract(content);
+        if (!limits.isValid()) {
+            throw new ParseException(limits.getError().getCode(), limits.getError().getPath());
+        }
 
         try {
             root = mapper.readTree(content);
@@ -74,7 +80,7 @@ public final class ContractParser {
         if (rootComponentNode == null) {
             throw new ParseException(ValidationErrorCode.UNKNOWN_SCHEMA_VERSION, "root");
         }
-        final var rootComponent = parseComponentNode(rootComponentNode, "root", 0);
+        final var rootComponent = parseComponentNode(rootComponentNode, "root");
 
         return new Contract(schemaVersion, id, properties, actions, rootComponent, contentBytes.length);
     }
@@ -120,18 +126,14 @@ public final class ContractParser {
         };
     }
 
-    private ComponentNode parseComponentNode(JsonNode node, String path, int depth) throws ParseException {
-        if (depth > MAX_JSON_DEPTH) {
-            throw new ParseException(ValidationErrorCode.LIMIT_EXCEEDED, path);
-        }
-
+    private ComponentNode parseComponentNode(JsonNode node, String path) throws ParseException {
         if (!node.isObject()) {
             throw new ParseException(ValidationErrorCode.UNKNOWN_SCHEMA_VERSION, path);
         }
 
         final var type = extractRequiredString(node, "type", path);
         final var props = extractRequiredProps(node, path);
-        final var children = extractChildren(node, path, depth);
+        final var children = extractChildren(node, path);
 
         return new ComponentNode(type, props, children);
     }
@@ -160,7 +162,7 @@ public final class ContractParser {
         return props;
     }
 
-    private List<ComponentNode> extractChildren(JsonNode node, String path, int depth) throws ParseException {
+    private List<ComponentNode> extractChildren(JsonNode node, String path) throws ParseException {
         final var childrenNode = node.get("children");
         if (childrenNode == null || !childrenNode.isArray()) {
             throw new ParseException(ValidationErrorCode.UNKNOWN_SCHEMA_VERSION, path);
@@ -170,7 +172,7 @@ public final class ContractParser {
         int index = 0;
 
         for (final var child : childrenNode) {
-            children.add(parseComponentNode(child, path + ".children[" + index + "]", depth + 1));
+            children.add(parseComponentNode(child, path + ".children[" + index + "]"));
             index++;
         }
 

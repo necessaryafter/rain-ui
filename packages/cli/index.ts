@@ -1,10 +1,5 @@
 #!/usr/bin/env bun
 
-// @rain-ui/cli placeholder
-// M1 will implement:
-// - rain build
-// - rain dev
-// - contract validation
-// - JSON generation
+import { main } from "./src/main";
 
-console.log("Rain UI CLI v1.0.0");
+process.exit(await main(process.argv.slice(2)));

@@ -40,5 +40,5 @@ export const Limits = {
     MAX_LIST_ELEMENTS: 1000,
     MAX_PAYLOAD_BYTES: 8 * 1024,
     MAX_PAYLOAD_DEPTH: 8,
-    MAX_JSON_DEPTH: 32,
+    MAX_JSON_DEPTH: 128,
 };

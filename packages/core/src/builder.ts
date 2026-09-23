@@ -20,7 +20,8 @@ export function defineActions<A extends Record<string, TypeSchema>>(actions: A):
     return actions;
 }
 
-const SCREEN_DEFINITION_SYMBOL = Symbol("rain.screen");
+// Symbol.for so a screen built against another copy of @rain-ui/core (e.g. the CLI's) is still recognized.
+const SCREEN_DEFINITION_SYMBOL = Symbol.for("rain.screen");
 
 export interface ScreenDefinition<P extends Record<string, TypeSchema> = Record<string, TypeSchema>, A extends Record<string, TypeSchema> = Record<string, TypeSchema>> {
     id: string;
