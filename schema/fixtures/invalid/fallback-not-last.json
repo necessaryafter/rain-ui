@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 0,
+  "id": "test:fallback-not-last",
+  "properties": {
+    "locked": {
+      "kind": "bool"
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "show",
+    "props": {
+      "when": {
+        "$bind": "locked"
+      }
+    },
+    "children": [
+      {
+        "type": "fallback",
+        "props": {},
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": "no"
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "props": {
+          "value": "yes"
+        },
+        "children": []
+      }
+    ]
+  }
+}

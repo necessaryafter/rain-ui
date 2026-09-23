@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 0,
+  "id": "test:color",
+  "properties": {
+    "tint": {
+      "kind": "string"
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "column",
+    "props": {},
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "value": "A",
+          "color": "#4CAF50"
+        },
+        "children": []
+      },
+      {
+        "type": "text",
+        "props": {
+          "value": "B",
+          "color": {
+            "$bind": "tint"
+          }
+        },
+        "children": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 0,
+  "id": "test:double",
+  "properties": {
+    "price": {
+      "kind": "double"
+    },
+    "listings": {
+      "kind": "list",
+      "of": {
+        "kind": "object",
+        "fields": {
+          "id": {
+            "kind": "string"
+          },
+          "price": {
+            "kind": "double"
+          }
+        }
+      }
+    }
+  },
+  "actions": {
+    "test:bid": {
+      "kind": "object",
+      "fields": {
+        "amount": {
+          "kind": "double"
+        },
+        "listingId": {
+          "kind": "string"
+        }
+      }
+    }
+  },
+  "root": {
+    "type": "column",
+    "props": {},
+    "children": [
+      {
+        "type": "button",
+        "props": {
+          "action": "test:bid",
+          "payload": {
+            "amount": 12.5,
+            "listingId": "a"
+          }
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": "Bid"
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "props": {
+          "source": {
+            "$bind": "listings"
+          }
+        },
+        "children": [
+          {
+            "type": "button",
+            "props": {
+              "action": "test:bid",
+              "payload": {
+                "amount": {
+                  "$bind": "price"
+                },
+                "listingId": {
+                  "$bind": "id"
+                }
+              }
+            },
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": "Bid"
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

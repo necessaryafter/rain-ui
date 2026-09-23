@@ -98,3 +98,41 @@ processor, version in `gradle.properties`). The Fabric modules do not, until one
 
 **Why:** Approved by the maintainer to remove hand-written getters and constructors. It is compile-time only, so it
 adds nothing to the runtime classpath of the mod.
+
+## 6. Optional values, conditions and the view model
+
+**Status:** Decided in M1, driven by real plugin models (GTS listings, cities, land claims)
+
+**What:**
+
+| Topic                 | Decision                                                                                                   |
+|-----------------------|------------------------------------------------------------------------------------------------------------|
+| Optional              | `t.x().optional()` → `{ "kind": "x", "optional": true }`. Absent and `null` both mean "no value".          |
+| Default               | `t.x().default(v)` for `string`/`int`/`long`/`bool`/`double` only; implies optional; used when absent or `null`, not for `""`; `properties` only, never in an action schema. |
+| Decimal               | `double` for data and payload. Not accepted by `text.value` or `match`; the server sends a label.          |
+| `text.value`          | String literal, or binding of `string`/`int`/`long` (raw decimal, locale-independent).                    |
+| `color`               | Literal `#RRGGBB` or string binding; a bad runtime value falls back to the default color.                 |
+| Optional binding      | Allowed on every prop, with a per-prop default: `""`, no item, `false`, `[]`, default color.              |
+| `show`                | `when` binds any type. `bool` uses its value; other types show the content when present and not `""`/`[]`. |
+| `match`               | `value` binds `string`/`int`/`long`/`bool`; `case is={literal}` children and at most one trailing `default`, which also takes an absent value. |
+| Payload               | A required payload field rejects a binding to an optional property without a default.                    |
+| Misuse                | Using a binding as a JS value in `render` is a build error; a declared property never bound is a warning. |
+
+`show`'s fallback and `match`'s cases are child nodes (`fallback`, `case`, `default`), so `ComponentNode` keeps its
+`{ type, props, children }` shape. New error codes: `INVALID_DEFAULT`, `MISPLACED_COMPONENT`, `DUPLICATE_CASE`.
+
+**Why:** The render runs once at build time, where a binding is a path marker and not a value, so JS conditions over
+data cannot work and would silently freeze the wrong result. Conditions over data have to be declarative for the
+client to evaluate. Formatting stays on the server: the client never learns currency symbols, locales or the
+inheritance rules of a plugin's model.
+
+## 7. Open items for later milestones
+
+- **M2:** server-initiated updates (update one instance, or every open instance of a screen); a Kotlin-friendly
+  adapter API where optional fields accept `null`; a dev warning when a properties send is large or a screen is
+  updated too often.
+- **M3:** a `countdown` component taking an epoch-millis `long`, so timers do not need one update per second; local
+  client state for purely visual toggles such as tabs; sending only what changed in an update; a declarative number
+  format prop.
+- **After v0:** a type-aware lint rule (`no-binding-in-condition`) for `if (p.x)`, `!p.x` and `p.x && …`, which the
+  build cannot detect at runtime.

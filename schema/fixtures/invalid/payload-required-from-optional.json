@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 0,
+  "id": "test:payload-required-from-optional",
+  "properties": {
+    "itemId": {
+      "kind": "string",
+      "optional": true
+    }
+  },
+  "actions": {
+    "test:buy": {
+      "kind": "object",
+      "fields": {
+        "itemId": {
+          "kind": "string"
+        }
+      }
+    }
+  },
+  "root": {
+    "type": "button",
+    "props": {
+      "action": "test:buy",
+      "payload": {
+        "itemId": {
+          "$bind": "itemId"
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "value": "Buy"
+        },
+        "children": []
+      }
+    ]
+  }
+}

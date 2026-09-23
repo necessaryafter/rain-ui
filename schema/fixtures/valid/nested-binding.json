@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 0,
+  "id": "test:nested-binding",
+  "properties": {
+    "owner": {
+      "kind": "object",
+      "fields": {
+        "name": {
+          "kind": "string"
+        }
+      }
+    },
+    "listings": {
+      "kind": "list",
+      "of": {
+        "kind": "object",
+        "fields": {
+          "name": {
+            "kind": "string"
+          },
+          "bidData": {
+            "kind": "object",
+            "fields": {
+              "bidderName": {
+                "kind": "string"
+              },
+              "bids": {
+                "kind": "list",
+                "of": {
+                  "kind": "object",
+                  "fields": {
+                    "bidderName": {
+                      "kind": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "column",
+    "props": {},
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "value": {
+            "$bind": "owner.name"
+          }
+        },
+        "children": []
+      },
+      {
+        "type": "list",
+        "props": {
+          "source": {
+            "$bind": "listings"
+          }
+        },
+        "children": [
+          {
+            "type": "column",
+            "props": {},
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": {
+                    "$bind": "name"
+                  }
+                },
+                "children": []
+              },
+              {
+                "type": "text",
+                "props": {
+                  "value": {
+                    "$bind": "bidData.bidderName"
+                  }
+                },
+                "children": []
+              },
+              {
+                "type": "list",
+                "props": {
+                  "source": {
+                    "$bind": "bidData.bids"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "props": {
+                      "value": {
+                        "$bind": "bidderName"
+                      }
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

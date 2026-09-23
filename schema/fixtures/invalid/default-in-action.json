@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 0,
+  "id": "test:default-in-action",
+  "properties": {},
+  "actions": {
+    "test:buy": {
+      "kind": "object",
+      "fields": {
+        "amount": {
+          "kind": "int",
+          "default": 1
+        }
+      }
+    }
+  },
+  "root": {
+    "type": "text",
+    "props": {
+      "value": "x"
+    },
+    "children": []
+  }
+}

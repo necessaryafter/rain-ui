@@ -132,19 +132,42 @@ emitido no contrato. A API exata deve ser proposta no plano do M1.
   `Record<string, Schema>`), porque isso apaga a tipagem dos bindings dentro do `render`. O core oferece
   `defineProperties` e `defineActions`: funções identidade que checam o formato sem perder a inferência.
 
-Tipos do v0: `string`, `int`, `long`, `bool`, `item` (ItemStack), `list(T)`, `object({...})`.
+Tipos do v0: `string`, `int`, `long`, `double`, `bool`, `item` (ItemStack), `list(T)`, `object({...})`.
+
+- **Opcional.** `t.string().optional()` aceita valor ausente ou `null`, e os dois significam "sem valor". No contrato:
+  `{ "kind": "string", "optional": true }`. Vale para qualquer tipo.
+- **Padrão.** `t.string().default("Sem descrição")` só existe em `string`, `int`, `long`, `bool` e `double`, e já
+  torna o campo opcional. O cliente usa o padrão quando o valor está ausente ou é `null` (não quando é `""`). Só pode
+  aparecer em `properties`, nunca no schema de uma ação. No contrato: `{ "kind": "string", "default": "…" }`.
+- **Decimal.** `double` serve para dados e payload. Para aparecer na tela, o servidor manda um label formatado.
+- As properties são o **view model** da tela: o servidor manda tudo pronto para exibir. Ver `docs/properties.md`.
 
 ### 5.2 Componentes do v0
 
-| Componente      | Props principais                                                         | Filhos |
-|-----------------|--------------------------------------------------------------------------|--------|
-| `column`, `row` | `gap`, `padding`, `align`, `justify`, `width`, `height`                  | sim    |
-| `text`          | `value` (string ou binding de string), `color`, `align`, `shadow`        | não    |
-| `item`          | `value` (binding de `item`), `size`                                      | não    |
-| `button`        | `action`, `payload`, `disabled` (bool ou binding de bool)                | sim    |
-| `list`          | `source` (binding de `list`); o filho é um template com o item no escopo | sim    |
+| Componente      | Props principais                                                                  | Filhos           |
+|-----------------|-----------------------------------------------------------------------------------|------------------|
+| `column`, `row` | `gap`, `padding`, `align`, `justify`, `width`, `height`                           | sim              |
+| `text`          | `value` (string, ou binding de `string`/`int`/`long`), `color`, `align`, `shadow` | não              |
+| `item`          | `value` (binding de `item`), `size`                                               | não              |
+| `button`        | `action`, `payload`, `disabled` (bool ou binding de bool)                         | sim              |
+| `list`          | `source` (binding de `list`); o filho é um template com o item no escopo          | sim              |
+| `show`          | `when` (binding de qualquer tipo), `fallback` (sub-árvore)                        | sim              |
+| `match`         | `value` (binding de `string`/`int`/`long`/`bool`)                                 | `case`/`default` |
+| `case`          | `is` (literal do tipo do `value` do `match`)                                      | sim              |
+| `default`       | —                                                                                 | sim              |
 
 Tamanhos em pixels de GUI, respeitando a GUI scale. `width`/`height` aceitam número, `fit` ou `fill`.
+
+- **`color`** aceita literal `#RRGGBB` ou binding de string. Se o valor recebido não for `#RRGGBB`, o cliente usa a cor
+  padrão, sem erro.
+- **`text.value` com número** mostra o decimal cru (`1250`), sem separador e sem depender do idioma. `double` e `bool`
+  não são aceitos: o servidor manda um label.
+- **`show`** desenha os filhos quando `when` tem valor, e o `fallback` quando não tem. Para `bool`, vale o próprio
+  valor. Para os outros tipos, ausente, `null`, `""` e `[]` contam como sem valor. No TSX, `fallback` é uma prop; no
+  contrato, vira um último filho do tipo `fallback`.
+- **`match`** desenha o primeiro `case` cujo `is` é igual ao valor, ou o `default` (o último filho, e opcional) quando
+  nenhum bate ou o valor está ausente. `case` e `default` só existem dentro de `match`, e `fallback` só dentro de
+  `show`.
 
 No M3: `grid`, `input`, `scroll` e `image`. O `image` só aceita texturas de resource pack por identificador; o cliente
 nunca decodifica imagem enviada pelo servidor.
@@ -152,9 +175,16 @@ nunca decodifica imagem enviada pelo servidor.
 ### 5.3 Bindings
 
 - Binding é só um caminho, sem expressões. Dentro de `list`, o escopo inclui o item atual.
+- O caminho atravessa objetos com ponto: `owner.name`, `bidData.currentBid`. Um objeto inteiro também pode ser
+  ligado, onde a prop aceitar (ex.: `show when`).
+- Um binding pode apontar para uma propriedade opcional. Sem valor, cada prop usa o seu padrão: `text.value` → `""`,
+  `item.value` → nada, `disabled` → `false`, `list.source` → `[]`, `color` → cor padrão.
+- No `render`, um binding é um marcador e não o valor. Usar um binding como valor JS (template string, concatenação,
+  comparação, `.length`, `.map`) é erro de build. O build avisa sobre property declarada e nunca usada.
 - Todo binding precisa resolver para uma propriedade declarada com tipo compatível com a prop: `text.value` exige
   string, `item.value` exige item, `list.source` exige list, `disabled` exige bool.
-- Valores do `payload` são literais ou bindings para campos em escopo.
+- Valores do `payload` são literais ou bindings para campos em escopo. Um campo opcional da ação pode faltar. Um campo
+  obrigatório não aceita binding de propriedade opcional sem padrão.
 - O formato exato do binding no JSON deve ser proposto no plano do M1.
 
 ### 5.4 Exemplo (ilustrativo, a API final sai do plano)
@@ -231,8 +261,9 @@ para os dois lados.
     - payload de interação: 8 KiB e profundidade 8;
     - profundidade máxima de qualquer JSON: 128, checada no parser streaming com contador próprio (não depender do
       limite de aninhamento da biblioteca de JSON). Ver `docs/decisions.md` §3.
-- Erros têm um código estável (`UNKNOWN_COMPONENT`, `UNDECLARED_BINDING`, `LIMIT_EXCEEDED`, ...) e o caminho do nó (
-  `root.children[2].props.value`). Os testes checam o código, nunca o texto da mensagem.
+- Erros têm um código estável (`UNKNOWN_COMPONENT`, `UNDECLARED_BINDING`, `LIMIT_EXCEEDED`, `INVALID_DEFAULT`,
+  `MISPLACED_COMPONENT`, `DUPLICATE_CASE`, ...) e o caminho do nó (`root.children[2].props.value`) ou da declaração
+  (`properties.listings.of.fields.price`). Os testes checam o código, nunca o texto da mensagem.
 
 ## 6. Protocolo
 

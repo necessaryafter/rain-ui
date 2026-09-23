@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 0,
+  "id": "test:nested-binding-undeclared",
+  "properties": {
+    "owner": {
+      "kind": "object",
+      "fields": {
+        "name": {
+          "kind": "string"
+        }
+      }
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "text",
+    "props": {
+      "value": {
+        "$bind": "owner.missing"
+      }
+    },
+    "children": []
+  }
+}

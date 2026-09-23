@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 0,
+  "id": "test:color-int-binding",
+  "properties": {
+    "count": {
+      "kind": "int"
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "text",
+    "props": {
+      "value": "A",
+      "color": {
+        "$bind": "count"
+      }
+    },
+    "children": []
+  }
+}

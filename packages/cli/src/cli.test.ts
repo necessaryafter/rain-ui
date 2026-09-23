@@ -198,3 +198,41 @@ describe("rain build --check", () => {
     expect(result.stderr.toLowerCase()).toContain("hash");
   });
 });
+
+describe("rain build unused property warnings", () => {
+  it("warns about declared properties the screen never binds, reporting only the outermost unused path", () => {
+    const { result } = build(fixture("unused-properties"));
+
+    expect(result.status).toBe(0);
+
+    const warnings = result.stderr.split("\n").filter((line) => line.includes("unused property"));
+    expect(warnings).toHaveLength(2);
+    expect(warnings.some((line) => line.includes("listings[].sellerId") && line.includes("test:unused"))).toBe(true);
+    expect(warnings.some((line) => line.includes("listings[].bids") && line.includes("test:unused"))).toBe(true);
+  });
+
+  it("counts a property used only in a payload as used", () => {
+    const { result } = build(fixture("unused-properties"));
+
+    expect(result.stderr).not.toContain("listings[].id");
+  });
+});
+
+describe("rain build examples", () => {
+  for (const example of ["gts", "city", "land"]) {
+    it(`builds examples/${example} into valid contracts`, () => {
+      const { out, result } = build(path.join(projectRoot, "examples", example));
+
+      expect(result.status).toBe(0);
+
+      const screens = Object.values(readManifest(out).screens) as { file: string }[];
+      expect(screens.length).toBeGreaterThan(0);
+
+      for (const { file } of screens) {
+        const text = fs.readFileSync(path.join(out, file), "utf-8");
+        const validation = validateContract(JSON.parse(text), { sourceBytes: Buffer.byteLength(text, "utf-8") });
+        expect(validation).toEqual({ ok: true });
+      }
+    });
+  }
+});

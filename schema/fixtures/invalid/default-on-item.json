@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 0,
+  "id": "test:default-on-item",
+  "properties": {
+    "icon": {
+      "kind": "item",
+      "default": "minecraft:stone"
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "text",
+    "props": {
+      "value": "x"
+    },
+    "children": []
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 0,
+  "id": "test:fallback-outside-show",
+  "properties": {},
+  "actions": {},
+  "root": {
+    "type": "column",
+    "props": {},
+    "children": [
+      {
+        "type": "fallback",
+        "props": {},
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": "x"
+            },
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

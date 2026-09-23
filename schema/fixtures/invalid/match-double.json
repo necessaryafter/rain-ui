@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 0,
+  "id": "test:match-double",
+  "properties": {
+    "price": {
+      "kind": "double"
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "match",
+    "props": {
+      "value": {
+        "$bind": "price"
+      }
+    },
+    "children": [
+      {
+        "type": "case",
+        "props": {
+          "is": 1
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": "x"
+            },
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

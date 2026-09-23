@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 0,
+  "id": "test:payload-optional",
+  "properties": {
+    "id": {
+      "kind": "string"
+    },
+    "note": {
+      "kind": "string",
+      "optional": true
+    }
+  },
+  "actions": {
+    "test:act": {
+      "kind": "object",
+      "fields": {
+        "id": {
+          "kind": "string"
+        },
+        "note": {
+          "kind": "string",
+          "optional": true
+        }
+      }
+    }
+  },
+  "root": {
+    "type": "column",
+    "props": {},
+    "children": [
+      {
+        "type": "button",
+        "props": {
+          "action": "test:act",
+          "payload": {
+            "id": {
+              "$bind": "id"
+            }
+          }
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": "A"
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "type": "button",
+        "props": {
+          "action": "test:act",
+          "payload": {
+            "id": "x",
+            "note": {
+              "$bind": "note"
+            }
+          }
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": "B"
+            },
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

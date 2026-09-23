@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 0,
+  "id": "test:color-invalid-literal",
+  "properties": {},
+  "actions": {},
+  "root": {
+    "type": "text",
+    "props": {
+      "value": "A",
+      "color": "red"
+    },
+    "children": []
+  }
+}

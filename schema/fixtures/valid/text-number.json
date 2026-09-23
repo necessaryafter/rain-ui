@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 0,
+  "id": "test:text-number",
+  "properties": {
+    "count": {
+      "kind": "int"
+    },
+    "total": {
+      "kind": "long"
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "column",
+    "props": {},
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "value": {
+            "$bind": "count"
+          }
+        },
+        "children": []
+      },
+      {
+        "type": "text",
+        "props": {
+          "value": {
+            "$bind": "total"
+          }
+        },
+        "children": []
+      }
+    ]
+  }
+}

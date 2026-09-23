@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 0,
+  "id": "test:nested-list",
+  "properties": {
+    "rows": {
+      "kind": "list",
+      "of": {
+        "kind": "object",
+        "fields": {
+          "cells": {
+            "kind": "list",
+            "of": {
+              "kind": "object",
+              "fields": {
+                "label": {
+                  "kind": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "list",
+    "props": {
+      "source": {
+        "$bind": "rows"
+      }
+    },
+    "children": [
+      {
+        "type": "list",
+        "props": {
+          "source": {
+            "$bind": "cells"
+          }
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": {
+                "$bind": "label"
+              }
+            },
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

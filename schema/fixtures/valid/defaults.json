@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 0,
+  "id": "test:defaults",
+  "properties": {
+    "subtitle": {
+      "kind": "string",
+      "default": "Sem descrição"
+    },
+    "count": {
+      "kind": "int",
+      "default": 0
+    },
+    "total": {
+      "kind": "long",
+      "default": 0
+    },
+    "enabled": {
+      "kind": "bool",
+      "default": true
+    },
+    "ratio": {
+      "kind": "double",
+      "default": 1.5
+    },
+    "listings": {
+      "kind": "list",
+      "of": {
+        "kind": "object",
+        "fields": {
+          "label": {
+            "kind": "string",
+            "default": "-"
+          }
+        }
+      }
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "column",
+    "props": {},
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "value": {
+            "$bind": "subtitle"
+          }
+        },
+        "children": []
+      },
+      {
+        "type": "list",
+        "props": {
+          "source": {
+            "$bind": "listings"
+          }
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": {
+                "$bind": "label"
+              }
+            },
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

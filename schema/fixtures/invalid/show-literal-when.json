@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 0,
+  "id": "test:show-literal-when",
+  "properties": {},
+  "actions": {},
+  "root": {
+    "type": "show",
+    "props": {
+      "when": true
+    },
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "value": "x"
+        },
+        "children": []
+      }
+    ]
+  }
+}

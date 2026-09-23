@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 0,
+  "id": "test:optional-bindings",
+  "properties": {
+    "subtitle": {
+      "kind": "string",
+      "optional": true
+    },
+    "tint": {
+      "kind": "string",
+      "optional": true
+    },
+    "icon": {
+      "kind": "item",
+      "optional": true
+    },
+    "locked": {
+      "kind": "bool",
+      "optional": true
+    },
+    "entries": {
+      "kind": "list",
+      "of": {
+        "kind": "object",
+        "fields": {
+          "name": {
+            "kind": "string"
+          }
+        }
+      },
+      "optional": true
+    }
+  },
+  "actions": {
+    "test:noop": {
+      "kind": "object",
+      "fields": {}
+    }
+  },
+  "root": {
+    "type": "column",
+    "props": {},
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "value": {
+            "$bind": "subtitle"
+          },
+          "color": {
+            "$bind": "tint"
+          }
+        },
+        "children": []
+      },
+      {
+        "type": "item",
+        "props": {
+          "value": {
+            "$bind": "icon"
+          }
+        },
+        "children": []
+      },
+      {
+        "type": "button",
+        "props": {
+          "action": "test:noop",
+          "disabled": {
+            "$bind": "locked"
+          }
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": "Go"
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "props": {
+          "source": {
+            "$bind": "entries"
+          }
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": {
+                "$bind": "name"
+              }
+            },
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

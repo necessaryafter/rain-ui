@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 0,
+  "id": "test:case-outside-match",
+  "properties": {},
+  "actions": {},
+  "root": {
+    "type": "column",
+    "props": {},
+    "children": [
+      {
+        "type": "case",
+        "props": {
+          "is": "A"
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": "x"
+            },
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 0,
+  "id": "test:match-non-case-child",
+  "properties": {
+    "status": {
+      "kind": "string"
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "match",
+    "props": {
+      "value": {
+        "$bind": "status"
+      }
+    },
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "value": "x"
+        },
+        "children": []
+      }
+    ]
+  }
+}

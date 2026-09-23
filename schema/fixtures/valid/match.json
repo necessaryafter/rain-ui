@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 0,
+  "id": "test:match",
+  "properties": {
+    "status": {
+      "kind": "string"
+    },
+    "level": {
+      "kind": "int"
+    },
+    "active": {
+      "kind": "bool"
+    },
+    "reason": {
+      "kind": "string",
+      "optional": true
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "column",
+    "props": {},
+    "children": [
+      {
+        "type": "match",
+        "props": {
+          "value": {
+            "$bind": "status"
+          }
+        },
+        "children": [
+          {
+            "type": "case",
+            "props": {
+              "is": "ACTIVE"
+            },
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": "Ativo"
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "case",
+            "props": {
+              "is": "SOLD"
+            },
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": "Vendido"
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "default",
+            "props": {},
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": "Outro"
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "match",
+        "props": {
+          "value": {
+            "$bind": "level"
+          }
+        },
+        "children": [
+          {
+            "type": "case",
+            "props": {
+              "is": 1
+            },
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": "Um"
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "case",
+            "props": {
+              "is": 2
+            },
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": "Dois"
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "match",
+        "props": {
+          "value": {
+            "$bind": "active"
+          }
+        },
+        "children": [
+          {
+            "type": "case",
+            "props": {
+              "is": true
+            },
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": "Sim"
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "case",
+            "props": {
+              "is": false
+            },
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": "Não"
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "match",
+        "props": {
+          "value": {
+            "$bind": "reason"
+          }
+        },
+        "children": [
+          {
+            "type": "case",
+            "props": {
+              "is": "DELIVERY_FAILED"
+            },
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": "Falha na entrega"
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "default",
+            "props": {},
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": "Sem pendência"
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

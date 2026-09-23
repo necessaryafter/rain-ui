@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 0,
+  "id": "test:case-type-mismatch",
+  "properties": {
+    "status": {
+      "kind": "string"
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "match",
+    "props": {
+      "value": {
+        "$bind": "status"
+      }
+    },
+    "children": [
+      {
+        "type": "case",
+        "props": {
+          "is": 1
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": "x"
+            },
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

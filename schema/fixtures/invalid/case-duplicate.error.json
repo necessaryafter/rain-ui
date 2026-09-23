@@ -1,0 +1,4 @@
+{
+  "code": "DUPLICATE_CASE",
+  "path": "root.children[1].props.is"
+}

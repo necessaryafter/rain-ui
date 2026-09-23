@@ -1,0 +1,407 @@
+{
+  "schemaVersion": 0,
+  "id": "gts:listings",
+  "properties": {
+    "pageLabel": {
+      "kind": "string"
+    },
+    "isFirstPage": {
+      "kind": "bool"
+    },
+    "isLastPage": {
+      "kind": "bool"
+    },
+    "listings": {
+      "kind": "list",
+      "of": {
+        "kind": "object",
+        "fields": {
+          "id": {
+            "kind": "string"
+          },
+          "pokemon": {
+            "kind": "item"
+          },
+          "pokemonName": {
+            "kind": "string"
+          },
+          "sellerName": {
+            "kind": "string"
+          },
+          "saleType": {
+            "kind": "string"
+          },
+          "status": {
+            "kind": "string"
+          },
+          "statusLabel": {
+            "kind": "string"
+          },
+          "price": {
+            "kind": "double",
+            "optional": true
+          },
+          "priceLabel": {
+            "kind": "string",
+            "optional": true
+          },
+          "timeLeft": {
+            "kind": "string"
+          },
+          "bidData": {
+            "kind": "object",
+            "fields": {
+              "currentBid": {
+                "kind": "double",
+                "optional": true
+              },
+              "currentBidLabel": {
+                "kind": "string",
+                "optional": true
+              },
+              "startingBidLabel": {
+                "kind": "string",
+                "optional": true
+              },
+              "bidCount": {
+                "kind": "int",
+                "default": 0
+              }
+            }
+          },
+          "awaitingClaimLabel": {
+            "kind": "string",
+            "optional": true
+          }
+        }
+      }
+    }
+  },
+  "actions": {
+    "gts:open": {
+      "kind": "object",
+      "fields": {
+        "listingId": {
+          "kind": "string"
+        }
+      }
+    },
+    "gts:page": {
+      "kind": "object",
+      "fields": {
+        "direction": {
+          "kind": "string"
+        }
+      }
+    }
+  },
+  "root": {
+    "type": "column",
+    "props": {
+      "gap": 4,
+      "padding": 8
+    },
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "value": "GTS"
+        },
+        "children": []
+      },
+      {
+        "type": "show",
+        "props": {
+          "when": {
+            "$bind": "listings"
+          }
+        },
+        "children": [
+          {
+            "type": "list",
+            "props": {
+              "source": {
+                "$bind": "listings"
+              }
+            },
+            "children": [
+              {
+                "type": "button",
+                "props": {
+                  "action": "gts:open",
+                  "payload": {
+                    "listingId": {
+                      "$bind": "id"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "type": "row",
+                    "props": {
+                      "gap": 4
+                    },
+                    "children": [
+                      {
+                        "type": "item",
+                        "props": {
+                          "value": {
+                            "$bind": "pokemon"
+                          }
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "column",
+                        "props": {
+                          "gap": 2
+                        },
+                        "children": [
+                          {
+                            "type": "text",
+                            "props": {
+                              "value": {
+                                "$bind": "pokemonName"
+                              }
+                            },
+                            "children": []
+                          },
+                          {
+                            "type": "text",
+                            "props": {
+                              "value": {
+                                "$bind": "sellerName"
+                              },
+                              "color": "#AAAAAA"
+                            },
+                            "children": []
+                          },
+                          {
+                            "type": "match",
+                            "props": {
+                              "value": {
+                                "$bind": "saleType"
+                              }
+                            },
+                            "children": [
+                              {
+                                "type": "case",
+                                "props": {
+                                  "is": "FIXED_PRICE"
+                                },
+                                "children": [
+                                  {
+                                    "type": "text",
+                                    "props": {
+                                      "value": {
+                                        "$bind": "priceLabel"
+                                      }
+                                    },
+                                    "children": []
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "case",
+                                "props": {
+                                  "is": "AUCTION"
+                                },
+                                "children": [
+                                  {
+                                    "type": "column",
+                                    "props": {},
+                                    "children": [
+                                      {
+                                        "type": "show",
+                                        "props": {
+                                          "when": {
+                                            "$bind": "bidData.currentBidLabel"
+                                          }
+                                        },
+                                        "children": [
+                                          {
+                                            "type": "text",
+                                            "props": {
+                                              "value": {
+                                                "$bind": "bidData.currentBidLabel"
+                                              }
+                                            },
+                                            "children": []
+                                          },
+                                          {
+                                            "type": "fallback",
+                                            "props": {},
+                                            "children": [
+                                              {
+                                                "type": "text",
+                                                "props": {
+                                                  "value": {
+                                                    "$bind": "bidData.startingBidLabel"
+                                                  }
+                                                },
+                                                "children": []
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "type": "text",
+                                        "props": {
+                                          "value": {
+                                            "$bind": "bidData.bidCount"
+                                          }
+                                        },
+                                        "children": []
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "type": "match",
+                            "props": {
+                              "value": {
+                                "$bind": "status"
+                              }
+                            },
+                            "children": [
+                              {
+                                "type": "case",
+                                "props": {
+                                  "is": "ACTIVE"
+                                },
+                                "children": [
+                                  {
+                                    "type": "text",
+                                    "props": {
+                                      "value": {
+                                        "$bind": "timeLeft"
+                                      }
+                                    },
+                                    "children": []
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "case",
+                                "props": {
+                                  "is": "AWAITING_CLAIM"
+                                },
+                                "children": [
+                                  {
+                                    "type": "text",
+                                    "props": {
+                                      "value": {
+                                        "$bind": "awaitingClaimLabel"
+                                      },
+                                      "color": "#FFAA00"
+                                    },
+                                    "children": []
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "default",
+                                "props": {},
+                                "children": [
+                                  {
+                                    "type": "text",
+                                    "props": {
+                                      "value": {
+                                        "$bind": "statusLabel"
+                                      }
+                                    },
+                                    "children": []
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "fallback",
+            "props": {},
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": "Nenhum anúncio"
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "row",
+        "props": {
+          "gap": 4
+        },
+        "children": [
+          {
+            "type": "button",
+            "props": {
+              "action": "gts:page",
+              "payload": {
+                "direction": "previous"
+              },
+              "disabled": {
+                "$bind": "isFirstPage"
+              }
+            },
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": "<"
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "props": {
+              "value": {
+                "$bind": "pageLabel"
+              }
+            },
+            "children": []
+          },
+          {
+            "type": "button",
+            "props": {
+              "action": "gts:page",
+              "payload": {
+                "direction": "next"
+              },
+              "disabled": {
+                "$bind": "isLastPage"
+              }
+            },
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": ">"
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

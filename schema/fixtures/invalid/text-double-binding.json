@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 0,
+  "id": "test:text-double-binding",
+  "properties": {
+    "price": {
+      "kind": "double"
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "text",
+    "props": {
+      "value": {
+        "$bind": "price"
+      }
+    },
+    "children": []
+  }
+}

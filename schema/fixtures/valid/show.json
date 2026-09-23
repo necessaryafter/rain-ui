@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 0,
+  "id": "test:show",
+  "properties": {
+    "locked": {
+      "kind": "bool"
+    },
+    "subtitle": {
+      "kind": "string",
+      "optional": true
+    },
+    "listings": {
+      "kind": "list",
+      "of": {
+        "kind": "object",
+        "fields": {
+          "name": {
+            "kind": "string"
+          }
+        }
+      }
+    },
+    "owner": {
+      "kind": "object",
+      "fields": {
+        "name": {
+          "kind": "string"
+        }
+      }
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "column",
+    "props": {},
+    "children": [
+      {
+        "type": "show",
+        "props": {
+          "when": {
+            "$bind": "locked"
+          }
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": "Locked"
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "type": "show",
+        "props": {
+          "when": {
+            "$bind": "subtitle"
+          }
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": {
+                "$bind": "subtitle"
+              }
+            },
+            "children": []
+          },
+          {
+            "type": "fallback",
+            "props": {},
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": "Sem descrição"
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "show",
+        "props": {
+          "when": {
+            "$bind": "listings"
+          }
+        },
+        "children": [
+          {
+            "type": "list",
+            "props": {
+              "source": {
+                "$bind": "listings"
+              }
+            },
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": {
+                    "$bind": "name"
+                  }
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "fallback",
+            "props": {},
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": "Vazio"
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "show",
+        "props": {
+          "when": {
+            "$bind": "owner"
+          }
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": {
+                "$bind": "owner.name"
+              }
+            },
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

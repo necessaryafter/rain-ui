@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 0,
+  "id": "test:case-duplicate",
+  "properties": {
+    "status": {
+      "kind": "string"
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "match",
+    "props": {
+      "value": {
+        "$bind": "status"
+      }
+    },
+    "children": [
+      {
+        "type": "case",
+        "props": {
+          "is": "A"
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": "x"
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "type": "case",
+        "props": {
+          "is": "A"
+        },
+        "children": [
+          {
+            "type": "text",
+            "props": {
+              "value": "y"
+            },
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}
