@@ -29,9 +29,10 @@ repositories {
     mavenCentral()
 }
 
-// Phase A: Test infrastructure exists but isn't run yet (implementations don't exist).
-// Phase B will implement the code and enable these tests.
 test {
     useJUnitPlatform()
     workingDir = rootProject.projectDir
+
+    // The fixture tests read these at runtime, so Gradle has to know about them or it skips the task as up to date.
+    inputs.dir(rootProject.file("schema/fixtures"))
 }
