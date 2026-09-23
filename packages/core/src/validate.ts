@@ -1,352 +1,389 @@
-import type { Contract, ComponentNode, TypeSchema } from "./types";
-import { ValidationErrorCode, Limits } from "./index";
+import { Limits, type ValidationErrorCode } from "./index";
+import { itemScopeOf, resolvePath, type ResolvedPath } from "./path";
+import type { TypeSchema } from "./types";
 
 export interface ValidationError {
-    code: ValidationErrorCode;
-    path: string;
+  code: ValidationErrorCode;
+  path: string;
 }
 
 export type ValidationResultOk = { ok: true };
 export type ValidationResultErr = { ok: false; error: ValidationError };
 export type ValidationResult = ValidationResultOk | ValidationResultErr;
 
-const COMPONENT_TYPES = new Set(["column", "row", "text", "item", "button", "list"]);
+type Scope = Record<string, TypeSchema>;
+
+const OK: ValidationResultOk = { ok: true };
 const ID_PATTERN = /^[a-z0-9_-]+:[a-z0-9_/-]+$/;
+const COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
+const KINDS = new Set(["string", "int", "long", "double", "bool", "item", "list", "object"]);
+const DEFAULTABLE_KINDS = new Set(["string", "int", "long", "double", "bool"]);
+const MATCHABLE_KINDS = new Set(["string", "int", "long", "bool"]);
 
-export function validateContract(json: unknown, options?: { sourceBytes?: number }): ValidationResult {
-    if (typeof json !== "object" || json === null) {
-        return { ok: false, error: { code: "UNKNOWN_SCHEMA_VERSION", path: "root" } };
-    }
+const ALLOWED_PROPS: Record<string, Set<string>> = {
+  column: new Set(["gap", "padding", "align", "justify", "width", "height"]),
+  row: new Set(["gap", "padding", "align", "justify", "width", "height"]),
+  text: new Set(["value", "color", "align", "shadow"]),
+  item: new Set(["value", "size"]),
+  button: new Set(["action", "payload", "disabled"]),
+  list: new Set(["source"]),
+  show: new Set(["when"]),
+  match: new Set(["value"]),
+  case: new Set(["is"]),
+  default: new Set(),
+  fallback: new Set(),
+};
 
-    const contract = json as any;
+// Components that only exist as a slot of a specific parent.
+const SLOT_PARENTS: Record<string, string> = {
+  case: "match",
+  default: "match",
+  fallback: "show",
+};
 
-    // Check contract byte size (Fix C)
-    const sourceBytes = options?.sourceBytes ?? Buffer.byteLength(JSON.stringify(contract), "utf-8");
-    if (sourceBytes > Limits.MAX_CONTRACT_BYTES) {
-        return { ok: false, error: { code: "LIMIT_EXCEEDED", path: "root" } };
-    }
-
-    if (exceedsDepth(contract, Limits.MAX_JSON_DEPTH)) {
-        return { ok: false, error: { code: "LIMIT_EXCEEDED", path: "root" } };
-    }
-
-    // Check basic constraints
-    if (contract.schemaVersion !== 0) {
-        return { ok: false, error: { code: "UNKNOWN_SCHEMA_VERSION", path: "schemaVersion" } };
-    }
-
-    if (!ID_PATTERN.test(contract.id)) {
-        return { ok: false, error: { code: "INVALID_ID", path: "id" } };
-    }
-
-    if (!isObject(contract.properties)) {
-        return { ok: false, error: { code: "UNKNOWN_SCHEMA_VERSION", path: "properties" } };
-    }
-
-    if (!isObject(contract.actions)) {
-        return { ok: false, error: { code: "UNKNOWN_SCHEMA_VERSION", path: "actions" } };
-    }
-
-    if (Object.keys(contract.actions).length > Limits.MAX_ACTIONS) {
-        return { ok: false, error: { code: "LIMIT_EXCEEDED", path: "actions" } };
-    }
-
-    // Validate action IDs
-    for (const actionId of Object.keys(contract.actions)) {
-        if (!ID_PATTERN.test(actionId)) {
-            return { ok: false, error: { code: "INVALID_ID", path: "actions" } };
-        }
-    }
-
-    // Validate component tree
-    const validator = new ContractValidator(contract.properties, contract.actions);
-    return validator.validateNode(contract.root, "root", contract.properties, 0);
+function fail(code: ValidationErrorCode, path: string): ValidationResultErr {
+  return { ok: false, error: { code, path } };
 }
 
-class ContractValidator {
-    private nodeCount = 0;
+export function validateContract(json: unknown, options?: { sourceBytes?: number }): ValidationResult {
+  if (!isObject(json)) return fail("UNKNOWN_SCHEMA_VERSION", "root");
 
-    constructor(private properties: Record<string, TypeSchema>, private actions: Record<string, TypeSchema>) {}
+  const contract = json as Record<string, any>;
 
-    validateNode(node: any, path: string, scope: Record<string, TypeSchema>, depth: number): ValidationResult {
-    // Check limits
+  const sourceBytes = options?.sourceBytes ?? Buffer.byteLength(JSON.stringify(contract), "utf-8");
+  if (sourceBytes > Limits.MAX_CONTRACT_BYTES) return fail("LIMIT_EXCEEDED", "root");
+  if (exceedsDepth(contract, Limits.MAX_JSON_DEPTH)) return fail("LIMIT_EXCEEDED", "root");
+
+  if (contract.schemaVersion !== 0) return fail("UNKNOWN_SCHEMA_VERSION", "schemaVersion");
+  if (!ID_PATTERN.test(contract.id)) return fail("INVALID_ID", "id");
+  if (!isObject(contract.properties)) return fail("UNKNOWN_SCHEMA_VERSION", "properties");
+  if (!isObject(contract.actions)) return fail("UNKNOWN_SCHEMA_VERSION", "actions");
+  if (Object.keys(contract.actions).length > Limits.MAX_ACTIONS) return fail("LIMIT_EXCEEDED", "actions");
+
+  for (const actionId of Object.keys(contract.actions)) {
+    if (!ID_PATTERN.test(actionId)) return fail("INVALID_ID", "actions");
+  }
+
+  const propertiesCheck = validateSchemas(contract.properties, "properties", true);
+  if (!propertiesCheck.ok) return propertiesCheck;
+
+  const actionsCheck = validateSchemas(contract.actions, "actions", false);
+  if (!actionsCheck.ok) return actionsCheck;
+
+  return new NodeValidator(contract.actions).validateNode(contract.root, "root", contract.properties, 0, undefined);
+}
+
+function validateSchemas(schemas: Record<string, unknown>, path: string, allowDefault: boolean): ValidationResult {
+  for (const [name, schema] of Object.entries(schemas)) {
+    const result = validateSchema(schema, `${path}.${name}`, allowDefault);
+    if (!result.ok) return result;
+  }
+
+  return OK;
+}
+
+function validateSchema(schema: any, path: string, allowDefault: boolean): ValidationResult {
+  if (!isObject(schema) || !KINDS.has(schema.kind)) return fail("UNKNOWN_SCHEMA_VERSION", path);
+
+  const defaultCheck = validateDefault(schema as TypeSchema, path, allowDefault);
+  if (!defaultCheck.ok) return defaultCheck;
+
+  if (schema.kind === "list") return validateSchema(schema.of, `${path}.of`, allowDefault);
+  if (schema.kind !== "object") return OK;
+  if (!isObject(schema.fields)) return fail("UNKNOWN_SCHEMA_VERSION", path);
+
+  return validateSchemas(schema.fields, `${path}.fields`, allowDefault);
+}
+
+// Defaults are only meaningful for properties the server sends; an action payload comes from the client.
+function validateDefault(schema: TypeSchema, path: string, allowDefault: boolean): ValidationResult {
+  const value = schema.default;
+  if (value === undefined) return OK;
+  if (!allowDefault || !DEFAULTABLE_KINDS.has(schema.kind)) return fail("INVALID_DEFAULT", path);
+  if (!matchesKind(value, schema.kind)) return fail("INVALID_DEFAULT", path);
+  if (typeof value === "string" && value.length > Limits.MAX_STRING_LENGTH) return fail("LIMIT_EXCEEDED", path);
+
+  return OK;
+}
+
+class NodeValidator {
+  private nodeCount = 0;
+
+  constructor(private readonly actions: Scope) {}
+
+  validateNode(node: any, path: string, scope: Scope, depth: number, parentType: string | undefined): ValidationResult {
     this.nodeCount++;
-    if (this.nodeCount > Limits.MAX_NODES) {
-      return { ok: false, error: { code: "LIMIT_EXCEEDED", path } };
+    if (this.nodeCount > Limits.MAX_NODES) return fail("LIMIT_EXCEEDED", path);
+    if (depth > Limits.MAX_DEPTH) return fail("LIMIT_EXCEEDED", path);
+
+    if (!isObject(node) || !(node.type in ALLOWED_PROPS)) return fail("UNKNOWN_COMPONENT", path);
+
+    const slotParent = SLOT_PARENTS[node.type];
+    if (slotParent !== undefined && slotParent !== parentType) return fail("MISPLACED_COMPONENT", path);
+
+    const propsCheck = this.validateProps(node, path, scope);
+    if (!propsCheck.ok) return propsCheck;
+
+    return this.validateChildren(node, path, scope, depth);
+  }
+
+  private validateProps(node: any, path: string, scope: Scope): ValidationResult {
+    const allowed = ALLOWED_PROPS[node.type];
+    const props = node.props ?? {};
+
+    for (const [key, value] of Object.entries(props)) {
+      const propPath = `${path}.props.${key}`;
+      if (!allowed.has(key)) return fail("UNKNOWN_PROP", propPath);
+
+      const result = this.validateProp(node.type, key, value, propPath, scope);
+      if (!result.ok) return result;
     }
 
-    if (depth > Limits.MAX_DEPTH) {
-      return { ok: false, error: { code: "LIMIT_EXCEEDED", path } };
+    if (node.type === "button" && "payload" in props) {
+      return this.validateButtonPayload(props, `${path}.props.payload`, scope);
     }
 
-    // Check component type
-    if (!COMPONENT_TYPES.has(node.type)) {
-      return { ok: false, error: { code: "UNKNOWN_COMPONENT", path } };
+    return OK;
+  }
+
+  private validateProp(type: string, key: string, value: unknown, path: string, scope: Scope): ValidationResult {
+    switch (`${type}.${key}`) {
+      case "text.value":
+        return validateTextValue(value, path, scope);
+      case "text.color":
+        return validateColor(value, path, scope);
+      case "column.gap":
+      case "column.padding":
+      case "row.gap":
+      case "row.padding":
+        return typeof value === "number" ? OK : fail("INVALID_PROP_TYPE", path);
+      case "item.value":
+        return validateBinding(value, path, scope, (kind) => kind === "item");
+      case "button.action":
+        return this.validateAction(value, path);
+      case "button.disabled":
+        return typeof value === "boolean" ? OK : validateBinding(value, path, scope, (kind) => kind === "bool");
+      case "list.source":
+        return validateBinding(value, path, scope, (kind) => kind === "list");
+      case "show.when":
+        return validateBinding(value, path, scope, () => true);
+      case "match.value":
+        return validateBinding(value, path, scope, (kind) => MATCHABLE_KINDS.has(kind));
+      default:
+        return OK;
+    }
+  }
+
+  private validateAction(value: unknown, path: string): ValidationResult {
+    if (typeof value !== "string") return fail("INVALID_PROP_TYPE", path);
+    if (!this.actions[value]) return fail("UNDECLARED_ACTION", path);
+
+    return OK;
+  }
+
+  private validateChildren(node: any, path: string, scope: Scope, depth: number): ValidationResult {
+    const children: any[] = node.children ?? [];
+
+    if (node.type === "match") {
+      const slotsCheck = validateMatchSlots(node, children, path, scope);
+      if (!slotsCheck.ok) return slotsCheck;
     }
 
-    // Validate props
-    const propResult = this.validateProps(node, path, scope);
-    if (!propResult.ok) return propResult;
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      const childPath = `${path}.children[${i}]`;
 
-    // Validate children
-    const childResult = this.validateChildren(node, path, scope, depth);
-    if (!childResult.ok) return childResult;
+      if (child?.type === "fallback" && i !== children.length - 1) return fail("MISPLACED_COMPONENT", childPath);
 
-    return { ok: true };
+      const childScope = node.type === "list" && i === 0 ? listItemScope(node, scope) ?? scope : scope;
+      const result = this.validateNode(child, childPath, childScope, depth + 1, node.type);
+      if (!result.ok) return result;
     }
 
-    private validateProps(node: any, path: string, scope: Record<string, TypeSchema>): ValidationResult {
-        const ALLOWED_PROPS: Record<string, Set<string>> = {
-            text: new Set(["value", "color", "align", "shadow"]),
-            column: new Set(["gap", "padding", "align", "justify", "width", "height"]),
-            row: new Set(["gap", "padding", "align", "justify", "width", "height"]),
-            item: new Set(["value", "size"]),
-            button: new Set(["action", "payload", "disabled"]),
-            list: new Set(["source"]),
-        };
+    return OK;
+  }
 
-        const allowedProps = ALLOWED_PROPS[node.type] || new Set();
+  private validateButtonPayload(props: Record<string, unknown>, path: string, scope: Scope): ValidationResult {
+    const action = props.action;
+    if (typeof action !== "string" || !this.actions[action]) return fail("PAYLOAD_SCHEMA_MISMATCH", path);
 
-        for (const propKey of Object.keys(node.props || {})) {
-            if (!allowedProps.has(propKey)) {
-                return { ok: false, error: { code: "UNKNOWN_PROP", path: `${path}.props.${propKey}` } };
-            }
+    return validatePayloadValue(props.payload, this.actions[action], path, scope);
+  }
+}
 
-            const propValue = node.props[propKey];
-            const propResult = this.validateProp(node.type, propKey, propValue, `${path}.props.${propKey}`, scope);
-            if (!propResult.ok) return propResult;
-        }
+// Checks what only the match itself knows: children are cases or one trailing default, and each case literal has the
+// type of the matched value and appears once.
+function validateMatchSlots(node: any, children: any[], path: string, scope: Scope): ValidationResult {
+  const matched = isBinding(node.props?.value) ? resolvePath(scope, node.props.value.$bind) : undefined;
+  const seen = new Set<unknown>();
 
-        // Fix B: validate button payload against action schema (paired validation)
-        if (node.type === "button" && "payload" in (node.props || {})) {
-            const payloadResult = this.validateButtonPayload(node, path, scope);
-            if (!payloadResult.ok) return payloadResult;
-        }
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    const childPath = `${path}.children[${i}]`;
 
-        return { ok: true };
+    if (child?.type === "default") {
+      if (i !== children.length - 1) return fail("MISPLACED_COMPONENT", childPath);
+      continue;
     }
 
-    private validateProp(componentType: string, propName: string, propValue: any, path: string, scope: Record<string, TypeSchema>): ValidationResult {
-        switch (componentType) {
-            case "text":
-                if (propName === "value") {
-                    return this.validateStringOrBinding(propValue, path, scope);
-                }
-                break;
+    if (child?.type !== "case") return fail("MISPLACED_COMPONENT", childPath);
 
-            case "button":
-                if (propName === "action") {
-                    if (typeof propValue !== "string" || !this.actions[propValue]) {
-                        return { ok: false, error: { code: propValue in this.actions ? "INVALID_PROP_TYPE" : "UNDECLARED_ACTION", path } };
-                    }
-                } else if (propName === "disabled") {
-                    return this.validateBoolOrBinding(propValue, path, scope);
-                } else if (propName === "payload") {
-                    // Paired validation happens in validateProps after all per-key checks
-                    return { ok: true };
-                }
-                break;
+    const literal = child.props?.is;
+    const literalPath = `${childPath}.props.is`;
+    if (matched && !matchesKind(literal, matched.schema.kind)) return fail("INVALID_PROP_TYPE", literalPath);
+    if (seen.has(literal)) return fail("DUPLICATE_CASE", literalPath);
 
-            case "item":
-                if (propName === "value") {
-                    return this.validateBinding(propValue, path, scope, (schema) => (schema as any).kind === "item");
-                }
-                break;
+    seen.add(literal);
+  }
 
-            case "list":
-                if (propName === "source") {
-                    return this.validateBinding(propValue, path, scope, (schema) => (schema as any).kind === "list");
-                }
-                break;
-        }
+  return OK;
+}
 
-        return { ok: true };
-    }
+function validateTextValue(value: unknown, path: string, scope: Scope): ValidationResult {
+  if (typeof value === "string") {
+    return value.length > Limits.MAX_STRING_LENGTH ? fail("LIMIT_EXCEEDED", path) : OK;
+  }
 
-    private validateStringOrBinding(propValue: any, path: string, scope: Record<string, TypeSchema>): ValidationResult {
-    if (typeof propValue === "string") {
-      if (propValue.length > Limits.MAX_STRING_LENGTH) {
-        return { ok: false, error: { code: "LIMIT_EXCEEDED", path } };
-      }
-      return { ok: true };
-    }
+  return validateBinding(value, path, scope, (kind) => kind === "string" || kind === "int" || kind === "long");
+}
 
-    if (isBinding(propValue)) {
-      const bindPath = propValue.$bind;
-      const schema = scope[bindPath];
+// A bad color that arrives at runtime through a binding falls back to the default color on the client.
+function validateColor(value: unknown, path: string, scope: Scope): ValidationResult {
+  if (typeof value === "string") {
+    return COLOR_PATTERN.test(value) ? OK : fail("INVALID_PROP_TYPE", path);
+  }
 
-      if (!schema) return { ok: false, error: { code: "UNDECLARED_BINDING", path } };
-      if ((schema as any).kind !== "string") return { ok: false, error: { code: "BINDING_TYPE_MISMATCH", path } };
+  return validateBinding(value, path, scope, (kind) => kind === "string");
+}
 
-      return { ok: true };
-    }
+function validateBinding(
+  value: unknown,
+  path: string,
+  scope: Scope,
+  acceptsKind: (kind: TypeSchema["kind"]) => boolean,
+): ValidationResult {
+  if (!isBinding(value)) return fail("INVALID_PROP_TYPE", path);
 
-    return { ok: false, error: { code: "INVALID_PROP_TYPE", path } };
-    }
+  const resolved = resolvePath(scope, value.$bind);
+  if (!resolved) return fail("UNDECLARED_BINDING", path);
+  if (!acceptsKind(resolved.schema.kind)) return fail("BINDING_TYPE_MISMATCH", path);
 
-    private validateBoolOrBinding(propValue: any, path: string, scope: Record<string, TypeSchema>): ValidationResult {
-    if (typeof propValue === "boolean") {
-      return { ok: true };
-    }
+  return OK;
+}
 
-    if (isBinding(propValue)) {
-      const bindPath = propValue.$bind;
-      const schema = scope[bindPath];
-      if (!schema) return { ok: false, error: { code: "UNDECLARED_BINDING", path } };
-      if ((schema as any).kind !== "bool") return { ok: false, error: { code: "BINDING_TYPE_MISMATCH", path } };
-      return { ok: true };
-    }
+function listItemScope(node: any, scope: Scope): Scope | undefined {
+  const source = node.props?.source;
+  if (!isBinding(source)) return undefined;
 
-    return { ok: false, error: { code: "INVALID_PROP_TYPE", path } };
-    }
+  return itemScopeOf(scope, source.$bind);
+}
 
-    private validateBinding(
-    propValue: any,
-    path: string,
-    scope: Record<string, TypeSchema>,
-    typeCheck: (schema: TypeSchema) => boolean
-    ): ValidationResult {
-    if (!isBinding(propValue)) {
-      return { ok: false, error: { code: "INVALID_PROP_TYPE", path } };
-    }
+function validatePayloadValue(value: unknown, schema: TypeSchema, path: string, scope: Scope): ValidationResult {
+  if (isBinding(value)) {
+    const resolved = resolvePath(scope, value.$bind);
+    if (!resolved) return fail("UNDECLARED_BINDING", path);
+    if (!isAssignable(resolved, schema)) return fail("BINDING_TYPE_MISMATCH", path);
 
-    const bindPath = propValue.$bind;
-    const schema = scope[bindPath];
-    if (!schema) return { ok: false, error: { code: "UNDECLARED_BINDING", path } };
-    if (!typeCheck(schema)) return { ok: false, error: { code: "BINDING_TYPE_MISMATCH", path } };
+    return OK;
+  }
 
-    return { ok: true };
-    }
+  if (value === null || value === undefined) {
+    return isOptional(schema) ? OK : fail("PAYLOAD_SCHEMA_MISMATCH", path);
+  }
 
-    private validateChildren(node: any, path: string, scope: Record<string, TypeSchema>, depth: number): ValidationResult {
-        const children = node.children || [];
+  switch (schema.kind) {
+    case "object":
+      return validatePayloadObject(value, schema.fields, path, scope);
+    case "list":
+      return validatePayloadList(value, schema.of, path, scope);
+    case "item":
+      return fail("PAYLOAD_SCHEMA_MISMATCH", path);
+    default:
+      return matchesKind(value, schema.kind) ? OK : fail("PAYLOAD_SCHEMA_MISMATCH", path);
+  }
+}
 
-        for (let i = 0; i < children.length; i++) {
-            const child = children[i];
-            const childPath = `${path}.children[${i}]`;
+function validatePayloadObject(value: unknown, fields: Scope, path: string, scope: Scope): ValidationResult {
+  if (!isObject(value)) return fail("PAYLOAD_SCHEMA_MISMATCH", path);
 
-            // Fix A: For list nodes, first child uses item scope (resolved from source binding)
-            const childScope = node.type === "list" && i === 0
-                ? this.resolveItemScope(node, scope) ?? scope
-                : scope;
+  for (const [key, field] of Object.entries(fields)) {
+    if (!(key in value) && !isOptional(field)) return fail("PAYLOAD_SCHEMA_MISMATCH", `${path}.${key}`);
+  }
 
-            const childResult = this.validateNode(child, childPath, childScope, depth + 1);
-            if (!childResult.ok) return childResult;
-        }
+  for (const [key, field] of Object.entries(value)) {
+    const fieldPath = `${path}.${key}`;
+    if (!(key in fields)) return fail("PAYLOAD_SCHEMA_MISMATCH", fieldPath);
 
-        return { ok: true };
-    }
+    const result = validatePayloadValue(field, fields[key], fieldPath, scope);
+    if (!result.ok) return result;
+  }
 
-    private resolveItemScope(node: any, scope: Record<string, TypeSchema>): Record<string, TypeSchema> | null {
-        const sourceBinding = node.props?.source;
-        if (!isBinding(sourceBinding)) return null;
+  return OK;
+}
 
-        const bindPath = sourceBinding.$bind;
-        const sourceSchema = scope[bindPath];
-        if (!sourceSchema) return null;
+function validatePayloadList(value: unknown, of: TypeSchema, path: string, scope: Scope): ValidationResult {
+  if (!Array.isArray(value)) return fail("PAYLOAD_SCHEMA_MISMATCH", path);
 
-        const listSchema = sourceSchema as any;
-        if (listSchema.kind !== "list") return null;
+  for (let i = 0; i < value.length; i++) {
+    const result = validatePayloadValue(value[i], of, `${path}[${i}]`, scope);
+    if (!result.ok) return result;
+  }
 
-        const ofSchema = listSchema.of as any;
-        if (ofSchema.kind !== "object") return null;
+  return OK;
+}
 
-        return ofSchema.fields as Record<string, TypeSchema>;
-    }
+// A bound value fits a payload field when the shapes match and, if the field is required, the value is always present.
+function isAssignable(bound: ResolvedPath, target: TypeSchema): boolean {
+  if (!sameShape(bound.schema, target)) return false;
 
-    private validateButtonPayload(node: any, path: string, scope: Record<string, TypeSchema>): ValidationResult {
-        const actionId = node.props?.action;
-        if (typeof actionId !== "string" || !this.actions[actionId]) {
-            return { ok: false, error: { code: "PAYLOAD_SCHEMA_MISMATCH", path: `${path}.props.payload` } };
-        }
+  return !bound.optional || isOptional(target);
+}
 
-        const actionSchema = this.actions[actionId];
-        return this.validatePayloadValue(node.props.payload, actionSchema, `${path}.props.payload`, scope);
-    }
+function sameShape(a: TypeSchema, b: TypeSchema): boolean {
+  if (a.kind !== b.kind) return false;
+  if (a.kind === "list" && b.kind === "list") return sameShape(a.of, b.of);
+  if (a.kind !== "object" || b.kind !== "object") return true;
 
-    private validatePayloadValue(value: any, schema: TypeSchema, path: string, scope: Record<string, TypeSchema>): ValidationResult {
-        if (isBinding(value)) {
-            const bound = scope[(value as any).$bind];
-            if (!bound) return { ok: false, error: { code: "UNDECLARED_BINDING", path } };
-            if (!this.typeSchemasEqual(bound, schema)) return { ok: false, error: { code: "BINDING_TYPE_MISMATCH", path } };
-            return { ok: true };
-        }
+  const aKeys = Object.keys(a.fields).sort();
+  const bKeys = Object.keys(b.fields).sort();
+  if (aKeys.join("\0") !== bKeys.join("\0")) return false;
 
-        const schemaKind = (schema as any).kind;
-        switch (schemaKind) {
-            case "object": {
-                if (!isObject(value)) return { ok: false, error: { code: "PAYLOAD_SCHEMA_MISMATCH", path } };
-                const fields = (schema as any).fields as Record<string, TypeSchema>;
-                for (const key of Object.keys(fields)) {
-                    if (!(key in value)) return { ok: false, error: { code: "PAYLOAD_SCHEMA_MISMATCH", path: `${path}.${key}` } };
-                }
-                for (const key of Object.keys(value)) {
-                    if (!(key in fields)) return { ok: false, error: { code: "PAYLOAD_SCHEMA_MISMATCH", path: `${path}.${key}` } };
-                    const r = this.validatePayloadValue(value[key], fields[key], `${path}.${key}`, scope);
-                    if (!r.ok) return r;
-                }
-                return { ok: true };
-            }
-            case "list": {
-                if (!Array.isArray(value)) return { ok: false, error: { code: "PAYLOAD_SCHEMA_MISMATCH", path } };
-                const ofSchema = (schema as any).of as TypeSchema;
-                for (let i = 0; i < value.length; i++) {
-                    const r = this.validatePayloadValue(value[i], ofSchema, `${path}[${i}]`, scope);
-                    if (!r.ok) return r;
-                }
-                return { ok: true };
-            }
-            case "item":
-                return { ok: false, error: { code: "PAYLOAD_SCHEMA_MISMATCH", path } };
-            case "string":
-                return typeof value === "string" ? { ok: true } : { ok: false, error: { code: "PAYLOAD_SCHEMA_MISMATCH", path } };
-            case "bool":
-                return typeof value === "boolean" ? { ok: true } : { ok: false, error: { code: "PAYLOAD_SCHEMA_MISMATCH", path } };
-            case "int":
-            case "long":
-                return typeof value === "number" ? { ok: true } : { ok: false, error: { code: "PAYLOAD_SCHEMA_MISMATCH", path } };
-        }
+  return aKeys.every((key) => sameShape(a.fields[key], b.fields[key]));
+}
 
-        return { ok: false, error: { code: "PAYLOAD_SCHEMA_MISMATCH", path } };
-    }
+function isOptional(schema: TypeSchema): boolean {
+  return schema.optional === true || schema.default !== undefined;
+}
 
-    private typeSchemasEqual(a: TypeSchema, b: TypeSchema): boolean {
-        const aKind = (a as any).kind;
-        const bKind = (b as any).kind;
-        if (aKind !== bKind) return false;
-
-        if (aKind === "list") {
-            return this.typeSchemasEqual((a as any).of, (b as any).of);
-        }
-        if (aKind === "object") {
-            const aFields = (a as any).fields as Record<string, TypeSchema>;
-            const bFields = (b as any).fields as Record<string, TypeSchema>;
-            const aKeys = Object.keys(aFields).sort();
-            const bKeys = Object.keys(bFields).sort();
-            if (aKeys.length !== bKeys.length) return false;
-            for (let i = 0; i < aKeys.length; i++) {
-                if (aKeys[i] !== bKeys[i]) return false;
-                if (!this.typeSchemasEqual(aFields[aKeys[i]], bFields[bKeys[i]])) return false;
-            }
-            return true;
-        }
-        return true;
-    }
+function matchesKind(value: unknown, kind: TypeSchema["kind"]): boolean {
+  switch (kind) {
+    case "string":
+      return typeof value === "string";
+    case "int":
+    case "long":
+      return Number.isInteger(value);
+    case "double":
+      return typeof value === "number";
+    case "bool":
+      return typeof value === "boolean";
+    default:
+      return false;
+  }
 }
 
 // Stops descending as soon as the limit is passed, so recursion never goes deeper than maxDepth + 1.
 function exceedsDepth(value: unknown, maxDepth: number): boolean {
-    if (value === null || typeof value !== "object") return false;
-    if (maxDepth === 0) return true;
+  if (value === null || typeof value !== "object") return false;
+  if (maxDepth === 0) return true;
 
-    const children = Array.isArray(value) ? value : Object.values(value);
-    return children.some((child) => exceedsDepth(child, maxDepth - 1));
+  const children = Array.isArray(value) ? value : Object.values(value);
+  return children.some((child) => exceedsDepth(child, maxDepth - 1));
 }
 
-function isBinding(value: any): value is { $bind: string } {
-    return typeof value === "object" && value !== null && typeof value.$bind === "string" && Object.keys(value).length === 1;
+function isBinding(value: unknown): value is { $bind: string } {
+  return isObject(value) && typeof value.$bind === "string" && Object.keys(value).length === 1;
 }
 
-function isObject(value: any): value is Record<string, unknown> {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
+function isObject(value: unknown): value is Record<string, any> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

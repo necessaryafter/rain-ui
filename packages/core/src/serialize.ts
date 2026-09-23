@@ -1,146 +1,125 @@
-import type { ScreenDefinition } from "./builder";
-import type { ComponentNode, Contract, TypeSchema } from "./types";
-import type { RawNode } from "../jsx-runtime";
-import { createPropertyProxy, createActionProxy } from "./binding";
 import * as crypto from "crypto";
 
+import type { RawNode } from "../jsx-runtime";
+import { createActionProxy, createPropertyProxy } from "./binding";
+import type { ScreenDefinition } from "./builder";
+import { itemScopeOf } from "./path";
+import type { ComponentNode, Contract, TypeSchema } from "./types";
+
 export interface CompiledScreen {
-    id: string;
-    contract: Contract;
-    json: string;
-    sha256: string;
+  id: string;
+  contract: Contract;
+  json: string;
+  sha256: string;
 }
 
-// Compile a screen definition into a Contract JSON with sha256 hash
+// Runs render once with binding proxies and turns the JSX tree into the contract, plus its canonical JSON and hash.
 export function compileScreen(screenDef: ScreenDefinition): CompiledScreen {
-    const { id, properties, actions, render } = screenDef;
+  const { id, properties, actions, render } = screenDef;
 
-    // Build proxies for build-time execution
-    const propertyProxy = createPropertyProxy(properties);
-    const actionProxy = createActionProxy(actions);
+  const rawTree = render(createPropertyProxy(properties), createActionProxy(actions));
+  const contract: Contract = {
+    schemaVersion: 0,
+    id,
+    properties,
+    actions,
+    root: compileNode(rawTree as RawNode, properties),
+  };
 
-    // Execute render once to get the raw JSX tree
-    const rawTree = render(propertyProxy, actionProxy);
+  const json = JSON.stringify(canonicalize(contract));
+  const sha256 = crypto.createHash("sha256").update(json).digest("hex");
 
-    // Walk the raw tree and compile to ComponentNode tree
-    const rootComponent = compileNode(rawTree as RawNode, properties);
-
-    // Build the full contract
-    const contract: Contract = {
-    	schemaVersion: 0,
-    	id,
-    	properties,
-    	actions,
-    	root: rootComponent,
-    };
-
-    // Serialize to canonical JSON (sorted keys) and compute hash
-    const json = JSON.stringify(canonicalize(contract));
-    const sha256 = crypto.createHash("sha256").update(json).digest("hex");
-
-    return { id, contract, json, sha256 };
+  return { id, contract, json, sha256 };
 }
 
-// Walk raw JSX tree and compile to ComponentNode, resolving bindings/ActionRef
 function compileNode(node: RawNode, scope: Record<string, TypeSchema>): ComponentNode {
-    const { type, props, children } = node;
+  if (node.type === "list") return compileList(node, scope);
 
-    // Resolve props: convert Binding and ActionRef to their JSON form
-    const resolvedProps: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(props)) {
-    	resolvedProps[key] = resolveValue(value, scope);
-    }
+  const { fallback, ...props } = node.props;
+  const children = compileChildren(node.children, scope);
 
-    // Compile children
-    const compiledChildren: ComponentNode[] = [];
+  // <show fallback={...}> is written as a prop but lives in the contract as a trailing "fallback" child node.
+  if (node.type === "show" && fallback !== undefined) {
+    children.push({
+      type: "fallback",
+      props: {},
+      children: compileChildren([fallback], scope),
+    });
+  }
 
-    // Special handling for list: child is a function, not a node
-    if (type === "list") {
-    const sourceBinding = resolvedProps["source"];
-    if (sourceBinding && typeof sourceBinding === "object" && "$bind" in sourceBinding) {
-      const bindPath = (sourceBinding as any).$bind;
-      const sourceSchema = scope[bindPath];
-
-      if (sourceSchema && (sourceSchema as any).kind === "list") {
-        const listOf = (sourceSchema as any).of;
-
-        if (listOf && (listOf as any).kind === "object") {
-          const itemScope = (listOf as any).fields;
-          // Call the function child with item scope proxy
-          const itemProxy = createPropertyProxy(itemScope);
-          const templateNode = (children[0] as Function)(itemProxy);
-
-          compiledChildren.push(compileNode(templateNode as RawNode, itemScope));
-        }
-      }
-    }
-    } else {
-		for (const child of children) {
-			compiledChildren.push(compileNode(child as RawNode, scope));
-    	}
-	}
-
-    return {
-    	type,
-    	props: resolvedProps,
-    	children: compiledChildren,
-    };
+  return {
+    type: node.type,
+    props: resolveProps(node.type === "show" ? props : node.props),
+    children,
+  };
 }
 
-// Resolve a value: convert Binding, ActionRef to JSON form, pass through others
-function resolveValue(value: unknown, scope: Record<string, TypeSchema>): unknown {
-    if (value === null || value === undefined) {
-    return value;
-    }
+// A list's only child is a function: it is called once with a proxy of the item's fields to get the row template.
+function compileList(node: RawNode, scope: Record<string, TypeSchema>): ComponentNode {
+  const props = resolveProps(node.props);
+  const source = props.source as { $bind?: unknown } | undefined;
+  const template = node.children[0] as unknown;
 
-    if (typeof value === "object") {
-    const obj = value as Record<string, unknown>;
+  const itemScope = typeof source?.$bind === "string" ? itemScopeOf(scope, source.$bind) : undefined;
+  if (!itemScope || typeof template !== "function") {
+    return { type: "list", props, children: [] };
+  }
 
-    // Check for ActionRef: has __actionId
-    if ("__actionId" in obj && typeof obj.__actionId === "string") {
-      return obj.__actionId;
-    }
-
-    // Check for Binding: has $bind
-    if ("$bind" in obj && typeof obj.$bind === "string") {
-      return { $bind: obj.$bind };
-    }
-
-    // Check for plain object (props payload, etc.)
-    if (Array.isArray(value)) {
-      return (value as unknown[]).map((item) => resolveValue(item, scope));
-    }
-
-    // Recursively resolve object fields
-    const resolved: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(obj)) {
-      if (!k.startsWith("__")) {
-        // Skip phantom/internal fields
-        resolved[k] = resolveValue(v, scope);
-      }
-    }
-    return resolved;
-    }
-
-    return value;
+  return {
+    type: "list",
+    props,
+    children: [compileNode(template(createPropertyProxy(itemScope)) as RawNode, itemScope)],
+  };
 }
 
-// Recursively sort object keys for canonical JSON
-function canonicalize(obj: any): any {
-    if (obj === null || typeof obj !== "object") {
-    	return obj;
-    }
-
-    if (Array.isArray(obj)) {
-    	return obj.map(canonicalize);
-    }
-
-    const sorted: Record<string, any> = {};
-    for (const key of Object.keys(obj).sort()) {
-    	sorted[key] = canonicalize(obj[key]);
-    }
-    return sorted;
+// Fragments and arrays are flattened, and null/false/undefined are dropped, so build-time conditions such as
+// {SHOW_DEBUG && <text value="debug" />} work.
+function compileChildren(children: unknown[], scope: Record<string, TypeSchema>): ComponentNode[] {
+  return children
+    .flat(Infinity)
+    .filter((child) => child !== null && child !== undefined && child !== false)
+    .map((child) => compileNode(child as RawNode, scope));
 }
 
-// Re-export for convenience
-export { createPropertyProxy, createActionProxy } from "./binding";
+function resolveProps(props: Record<string, unknown>): Record<string, unknown> {
+  const resolved: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(props)) {
+    resolved[key] = resolveValue(value);
+  }
+
+  return resolved;
+}
+
+// Converts bindings and action references to their JSON form and passes literals through.
+function resolveValue(value: unknown): unknown {
+  if (value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(resolveValue);
+
+  // $bind first: a binding proxy throws on any other key, so it must be recognized before anything else is read.
+  const record = value as Record<string, unknown>;
+  if (typeof record.$bind === "string") return { $bind: record.$bind };
+  if (typeof record.__actionId === "string") return record.__actionId;
+
+  const resolved: Record<string, unknown> = {};
+  for (const [key, field] of Object.entries(record)) {
+    if (key.startsWith("__")) continue;
+
+    resolved[key] = resolveValue(field);
+  }
+
+  return resolved;
+}
+
+function canonicalize(value: unknown): unknown {
+  if (value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(canonicalize);
+
+  const sorted: Record<string, unknown> = {};
+  for (const key of Object.keys(value).sort()) {
+    sorted[key] = canonicalize((value as Record<string, unknown>)[key]);
+  }
+
+  return sorted;
+}
+
+export { createActionProxy, createPropertyProxy } from "./binding";

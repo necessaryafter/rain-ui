@@ -1,14 +1,36 @@
-import type { TypeSchema, TString, TInt, TLong, TBool, TItem, TList, TObject } from "./types";
+import type { TBool, TDouble, TInt, TItem, TList, TLong, TObject, TString, TypeSchema } from "./types";
 
-// Compile-time schema builders (t.* API) with non-widening generics
+export type Optionable<S extends TypeSchema> = S & {
+  optional(): S & { optional: true };
+};
+
+export type Defaultable<S extends TypeSchema, V> = Optionable<S> & {
+  default(value: V): S & { default: V };
+};
+
+// The modifiers are non-enumerable, so they never reach the serialized contract or its hash. They are terminal and
+// return a plain schema: the method names are also the serialized field names, so a modified schema cannot keep them.
+function optionable<S extends TypeSchema>(schema: S): Optionable<S> {
+  return Object.defineProperties({ ...schema }, {
+    optional: { value: () => ({ ...schema, optional: true }) },
+  }) as Optionable<S>;
+}
+
+function defaultable<S extends TypeSchema, V>(schema: S): Defaultable<S, V> {
+  return Object.defineProperties(optionable(schema), {
+    default: { value: (value: V) => ({ ...schema, default: value }) },
+  }) as Defaultable<S, V>;
+}
+
 export const t = {
-    string: (): TString => ({ kind: "string" }),
-    int: (): TInt => ({ kind: "int" }),
-    long: (): TLong => ({ kind: "long" }),
-    bool: (): TBool => ({ kind: "bool" }),
-    item: (): TItem => ({ kind: "item" }),
-    list: <Of extends TypeSchema>(of: Of): TList => ({ kind: "list", of }),
-    object: <Fields extends Record<string, TypeSchema>>(fields: Fields): TObject => ({ kind: "object", fields }),
+  string: () => defaultable<TString, string>({ kind: "string" }),
+  int: () => defaultable<TInt, number>({ kind: "int" }),
+  long: () => defaultable<TLong, number>({ kind: "long" }),
+  double: () => defaultable<TDouble, number>({ kind: "double" }),
+  bool: () => defaultable<TBool, boolean>({ kind: "bool" }),
+  item: () => optionable<TItem>({ kind: "item" }),
+  list: <Of extends TypeSchema>(of: Of) => optionable<TList>({ kind: "list", of }),
+  object: <Fields extends Record<string, TypeSchema>>(fields: Fields) => optionable<TObject>({ kind: "object", fields }),
 };
 
 // Identity generics that preserve literal type inference (no widening)

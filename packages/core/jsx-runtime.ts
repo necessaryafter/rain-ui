@@ -67,8 +67,8 @@ declare global {
       };
 
       text: {
-        value: string | Binding<string>;
-        color?: string;
+        value: string | Binding<string> | Binding<number>;
+        color?: string | Binding<string>;
         align?: string;
         shadow?: boolean;
       };
@@ -83,6 +83,26 @@ declare global {
       list: {
         source: Binding<"list">;
         children: (item: any) => RawNode;
+      };
+
+      show: {
+        when: Binding<unknown>;
+        fallback?: any;
+        children?: any;
+      };
+
+      match: {
+        value: Binding<unknown>;
+        children?: any;
+      };
+
+      case: {
+        is: string | number | boolean;
+        children?: any;
+      };
+
+      default: {
+        children?: any;
       };
     }
     }

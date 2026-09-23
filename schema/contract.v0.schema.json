@@ -14,7 +14,7 @@
     "schemaVersion": {
       "type": "integer",
       "const": 0,
-      "description": "Contract schema version — only 0 is supported in M1"
+      "description": "Contract schema version \u2014 only 0 is supported in M1"
     },
     "id": {
       "type": "string",
@@ -54,6 +54,9 @@
           "$ref": "#/definitions/TypeLong"
         },
         {
+          "$ref": "#/definitions/TypeDouble"
+        },
+        {
           "$ref": "#/definitions/TypeBool"
         },
         {
@@ -76,6 +79,15 @@
       "properties": {
         "kind": {
           "const": "string"
+        },
+        "optional": {
+          "const": true,
+          "description": "The value may be absent or null"
+        },
+        "default": {
+          "type": "string",
+          "maxLength": 1024,
+          "description": "Used when the value is absent or null; implies optional. Only allowed in properties"
         }
       },
       "additionalProperties": false
@@ -88,6 +100,14 @@
       "properties": {
         "kind": {
           "const": "int"
+        },
+        "optional": {
+          "const": true,
+          "description": "The value may be absent or null"
+        },
+        "default": {
+          "type": "integer",
+          "description": "Used when the value is absent or null; implies optional. Only allowed in properties"
         }
       },
       "additionalProperties": false
@@ -100,6 +120,34 @@
       "properties": {
         "kind": {
           "const": "long"
+        },
+        "optional": {
+          "const": true,
+          "description": "The value may be absent or null"
+        },
+        "default": {
+          "type": "integer",
+          "description": "Used when the value is absent or null; implies optional. Only allowed in properties"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TypeDouble": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "double"
+        },
+        "optional": {
+          "const": true,
+          "description": "The value may be absent or null"
+        },
+        "default": {
+          "type": "number",
+          "description": "Used when the value is absent or null; implies optional. Only allowed in properties"
         }
       },
       "additionalProperties": false
@@ -112,6 +160,14 @@
       "properties": {
         "kind": {
           "const": "bool"
+        },
+        "optional": {
+          "const": true,
+          "description": "The value may be absent or null"
+        },
+        "default": {
+          "type": "boolean",
+          "description": "Used when the value is absent or null; implies optional. Only allowed in properties"
         }
       },
       "additionalProperties": false
@@ -124,6 +180,10 @@
       "properties": {
         "kind": {
           "const": "item"
+        },
+        "optional": {
+          "const": true,
+          "description": "The value may be absent or null"
         }
       },
       "additionalProperties": false
@@ -140,6 +200,10 @@
         },
         "of": {
           "$ref": "#/definitions/TypeSchema"
+        },
+        "optional": {
+          "const": true,
+          "description": "The value may be absent or null"
         }
       },
       "additionalProperties": false
@@ -159,6 +223,10 @@
           "additionalProperties": {
             "$ref": "#/definitions/TypeSchema"
           }
+        },
+        "optional": {
+          "const": true,
+          "description": "The value may be absent or null"
         }
       },
       "additionalProperties": false
@@ -179,7 +247,12 @@
             "text",
             "item",
             "button",
-            "list"
+            "list",
+            "show",
+            "match",
+            "case",
+            "default",
+            "fallback"
           ],
           "description": "Component type"
         },

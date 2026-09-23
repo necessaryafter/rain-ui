@@ -15,6 +15,10 @@ export type { CompiledScreen } from "./serialize";
 
 export type { TypeSchema, ComponentNode, Contract } from "./types";
 
+export { resolvePath } from "./path";
+export { findUnusedProperties } from "./unused";
+export type { ResolvedPath } from "./path";
+
 // Validation error codes
 export type ValidationErrorCode =
     | "UNKNOWN_SCHEMA_VERSION"
@@ -27,7 +31,10 @@ export type ValidationErrorCode =
     | "PAYLOAD_SCHEMA_MISMATCH"
     | "DUPLICATE_SCREEN_ID"
     | "INVALID_ID"
-    | "LIMIT_EXCEEDED";
+    | "LIMIT_EXCEEDED"
+    | "INVALID_DEFAULT"
+    | "MISPLACED_COMPONENT"
+    | "DUPLICATE_CASE";
 
 // Limit constants (per spec §5.5)
 export const Limits = {
