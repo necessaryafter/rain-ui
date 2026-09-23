@@ -7,11 +7,21 @@
       "of": {
         "kind": "object",
         "fields": {
-          "id": { "kind": "string" },
-          "name": { "kind": "string" },
-          "priceLabel": { "kind": "string" },
-          "icon": { "kind": "item" },
-          "locked": { "kind": "bool" }
+          "id": {
+            "kind": "string"
+          },
+          "name": {
+            "kind": "string"
+          },
+          "priceLabel": {
+            "kind": "string"
+          },
+          "icon": {
+            "kind": "item"
+          },
+          "locked": {
+            "kind": "bool"
+          }
         }
       }
     }
@@ -20,53 +30,86 @@
     "shop:buy": {
       "kind": "object",
       "fields": {
-        "itemId": { "kind": "string" }
+        "itemId": {
+          "kind": "string"
+        }
       }
     }
   },
   "root": {
     "type": "column",
-    "props": { "gap": 4, "padding": 8 },
+    "props": {
+      "gap": 4,
+      "padding": 8
+    },
     "children": [
       {
         "type": "text",
-        "props": { "value": "Loja" },
+        "props": {
+          "value": "Loja"
+        },
         "children": []
       },
       {
         "type": "list",
-        "props": { "source": { "$bind": "items" } },
+        "props": {
+          "source": {
+            "$bind": "items"
+          }
+        },
         "children": [
           {
             "type": "row",
-            "props": { "gap": 4 },
+            "props": {
+              "gap": 4
+            },
             "children": [
               {
                 "type": "item",
-                "props": { "value": { "$bind": "icon" } },
+                "props": {
+                  "value": {
+                    "$bind": "icon"
+                  }
+                },
                 "children": []
               },
               {
                 "type": "text",
-                "props": { "value": { "$bind": "name" } },
+                "props": {
+                  "value": {
+                    "$bind": "name"
+                  }
+                },
                 "children": []
               },
               {
                 "type": "text",
-                "props": { "value": { "$bind": "priceLabel" } },
+                "props": {
+                  "value": {
+                    "$bind": "priceLabel"
+                  }
+                },
                 "children": []
               },
               {
                 "type": "button",
                 "props": {
                   "action": "shop:buy",
-                  "payload": { "itemId": { "$bind": "id" } },
-                  "disabled": { "$bind": "locked" }
+                  "payload": {
+                    "itemId": {
+                      "$bind": "id"
+                    }
+                  },
+                  "disabled": {
+                    "$bind": "locked"
+                  }
                 },
                 "children": [
                   {
                     "type": "text",
-                    "props": { "value": "Comprar" },
+                    "props": {
+                      "value": "Comprar"
+                    },
                     "children": []
                   }
                 ]

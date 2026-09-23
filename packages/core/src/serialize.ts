@@ -26,11 +26,11 @@ export function compileScreen(screenDef: ScreenDefinition): CompiledScreen {
 
     // Build the full contract
     const contract: Contract = {
-    schemaVersion: 0,
-    id,
-    properties,
-    actions,
-    root: rootComponent,
+    	schemaVersion: 0,
+    	id,
+    	properties,
+    	actions,
+    	root: rootComponent,
     };
 
     // Serialize to canonical JSON (sorted keys) and compute hash
@@ -47,7 +47,7 @@ function compileNode(node: RawNode, scope: Record<string, TypeSchema>): Componen
     // Resolve props: convert Binding and ActionRef to their JSON form
     const resolvedProps: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(props)) {
-    resolvedProps[key] = resolveValue(value, scope);
+    	resolvedProps[key] = resolveValue(value, scope);
     }
 
     // Compile children
@@ -62,26 +62,27 @@ function compileNode(node: RawNode, scope: Record<string, TypeSchema>): Componen
 
       if (sourceSchema && (sourceSchema as any).kind === "list") {
         const listOf = (sourceSchema as any).of;
+
         if (listOf && (listOf as any).kind === "object") {
           const itemScope = (listOf as any).fields;
           // Call the function child with item scope proxy
           const itemProxy = createPropertyProxy(itemScope);
           const templateNode = (children[0] as Function)(itemProxy);
+
           compiledChildren.push(compileNode(templateNode as RawNode, itemScope));
         }
       }
     }
     } else {
-    // Normal children: walk each one
-    for (const child of children) {
-      compiledChildren.push(compileNode(child as RawNode, scope));
-    }
-    }
+		for (const child of children) {
+			compiledChildren.push(compileNode(child as RawNode, scope));
+    	}
+	}
 
     return {
-    type,
-    props: resolvedProps,
-    children: compiledChildren,
+    	type,
+    	props: resolvedProps,
+    	children: compiledChildren,
     };
 }
 
@@ -126,16 +127,16 @@ function resolveValue(value: unknown, scope: Record<string, TypeSchema>): unknow
 // Recursively sort object keys for canonical JSON
 function canonicalize(obj: any): any {
     if (obj === null || typeof obj !== "object") {
-    return obj;
+    	return obj;
     }
 
     if (Array.isArray(obj)) {
-    return obj.map(canonicalize);
+    	return obj.map(canonicalize);
     }
 
     const sorted: Record<string, any> = {};
     for (const key of Object.keys(obj).sort()) {
-    sorted[key] = canonicalize(obj[key]);
+    	sorted[key] = canonicalize(obj[key]);
     }
     return sorted;
 }

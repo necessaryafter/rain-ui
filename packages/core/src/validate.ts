@@ -170,8 +170,10 @@ class ContractValidator {
     if (isBinding(propValue)) {
       const bindPath = propValue.$bind;
       const schema = scope[bindPath];
+
       if (!schema) return { ok: false, error: { code: "UNDECLARED_BINDING", path } };
       if ((schema as any).kind !== "string") return { ok: false, error: { code: "BINDING_TYPE_MISMATCH", path } };
+
       return { ok: true };
     }
 

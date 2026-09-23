@@ -2,21 +2,21 @@
 
 Operational guide for AI agents that write, change, or review code in this repository.
 
-This document describes how code should be written **in this repository**, based primarily on existing code. It is not a generic style guide. When the existing code and this document disagree, prefer the existing code.
+This document describes how code should be written **in this repository**. It is not a generic style guide.
 
 ## Rule Priority
 
-When patterns conflict, apply this order:
+The explicit rules in this document (early returns, blank lines, `final var`, import order, etc.) are mandatory. Existing
+code that violates them is not a precedent: do not copy the violation into new code.
+
+For everything this document does not decide explicitly, apply this order:
 
 1. Code immediately around the change.
 2. The current file and package/module conventions.
 3. The dominant convention in the repository.
-4. This document.
-5. Generic language/framework conventions.
+4. Generic language/framework conventions.
 
-Prefer local consistency over global consistency.
-
-Do not "fix" unrelated inconsistencies while making a change.
+Do not "fix" unrelated inconsistencies while making a change. Code you write or rewrite must follow this document.
 
 ---
 
@@ -107,7 +107,8 @@ Prefer established verbs such as:
 - `encode`
 - `decode`
 
-Use the repository's existing naming distinction between operations that may return nothing, operations that may return `null`/absence, and operations that fail when a value is missing.
+Use the repository's existing naming distinction between operations that may return nothing, operations that may return
+`null`/absence, and operations that fail when a value is missing.
 
 ### Booleans
 
@@ -124,74 +125,118 @@ Follow local conventions for boolean fields and properties.
 
 ## Formatting
 
-Formatting consistency is a high-priority requirement. **Match the existing code before applying generic formatter defaults.**
+Formatting consistency is a high-priority requirement. **Match the existing code before applying generic formatter
+defaults.**
 
 ### Indentation
 
-- Use the indentation style already established by the repository.
-- Default to **4 spaces** for indentation when no local convention exists.
-- Never use tabs unless the repository consistently uses them.
-- Continuation lines should use a consistent additional indentation level.
+- Java: **4 spaces** per level, **8 spaces** for continuation lines (wrapped record components, `permits` lists, chained
+  calls, wrapped arguments).
+- TypeScript: **2 spaces** per level.
+- Never use tabs. Never mix tabs and spaces in the same file.
 - Nested blocks must remain visually aligned with their parent construct.
-- Keep chained calls aligned consistently.
-
-Example:
 
 ```java
+public record Contract(
+        int schemaVersion,
+        String id,
+        ComponentNode root) {
+}
+
+public sealed interface TypeSchema
+        permits TypeSchema.StringType, TypeSchema.IntType, TypeSchema.LongType,
+        TypeSchema.BoolType, TypeSchema.ListType, TypeSchema.ObjectType {
+}
+
 final var result = service.load(id)
         .map(this::transform)
         .orElseThrow();
-
 ```
 
 ### Braces
 
-- Follow the repository's existing brace style.
-- Use braces for multi-line control flow.
-- Do not introduce a different brace style into an existing file.
-- Keep opening and closing braces visually consistent.
+- Opening brace on the same line (K&R).
+- Java: always use braces, even for single-statement `if`/`for`.
+- TypeScript: a trivial guard may be a single line without braces (`if (typeof key !== "string") return undefined;`).
+  Anything longer uses braces.
+- A top-level type with an empty body closes on its own line. Nested one-line records may keep `{}`.
 
 ```java
-if (condition) {
-    doSomething();
+public record ComponentNode(String type, Map<String, JsonNode> props, List<ComponentNode> children) {
 }
 
+public sealed interface TypeSchema permits ... {
+    record StringType() implements TypeSchema {}
+}
 ```
 
 ### Blank Lines
 
-Blank lines are part of the code structure and should be used consistently.
+Blank lines are part of the code structure. A method body is a sequence of short paragraphs, not one dense block.
 
-Use blank lines to separate:
+Rules:
 
-- fields from constructors;
-- constructors from methods;
-- logically distinct sections of a method;
-- guard clauses from the main operation;
-- setup from the main operation;
-- related but independent blocks of code.
-
-Avoid:
-
-- multiple consecutive blank lines;
-- removing intentional blank lines from existing code;
-- adding blank lines between every statement;
-- creating visually dense blocks with no separation.
-
-Example:
+- A variable and the guard that checks it form one paragraph: **no** blank line between them.
+- **Always** a blank line after a guard block (`if` that returns, throws, `yield`s or `continue`s).
+- **Always** a blank line before and after a loop, `try` block, or other multi-line block.
+- Setup that only exists for a loop (a counter, the result collection) is its own paragraph, separated from the loop.
+- A `return` that follows a block or a paragraph of statements gets a blank line before it.
+- Several one-line guards that check the same thing may stay together as one paragraph.
+- Separate fields from constructors, and each method from the next.
+- Never more than one consecutive blank line. Never a blank line right after `{` or right before `}`.
 
 ```java
-public void process(Request request) {
-    validate(request);
+public Contract parse(String content) throws ParseException {
+    final var contentBytes = content.getBytes(StandardCharsets.UTF_8);
+    JsonNode root;
 
-    final var data = loadData(request);
-    if (data.isEmpty()) {
-        return;
+    try {
+        root = mapper.readTree(content);
+    } catch (Exception e) {
+        throw new ParseException(ValidationErrorCode.UNKNOWN_SCHEMA_VERSION, "root");
     }
 
-    save(data);
+    if (!root.isObject()) {
+        throw new ParseException(ValidationErrorCode.UNKNOWN_SCHEMA_VERSION, "root");
+    }
+
+    final var schemaVersionNode = root.get("schemaVersion");
+    if (schemaVersionNode == null || !schemaVersionNode.isInt()) {
+        throw new ParseException(ValidationErrorCode.UNKNOWN_SCHEMA_VERSION, "schemaVersion");
+    }
+
+    final var schemaVersion = schemaVersionNode.asInt();
+    ...
 }
 
+private List<ComponentNode> extractChildren(JsonNode node, String path, int depth) throws ParseException {
+    final var childrenNode = node.get("children");
+    if (childrenNode == null || !childrenNode.isArray()) {
+        throw new ParseException(ValidationErrorCode.UNKNOWN_SCHEMA_VERSION, path);
+    }
+
+    final var children = new ArrayList<ComponentNode>();
+    int index = 0;
+
+    for (final var child : childrenNode) {
+        children.add(parseComponentNode(child, path + ".children[" + index + "]", depth + 1));
+        index++;
+    }
+
+    return children;
+}
+```
+
+```ts
+if (isBinding(propValue)) {
+  const bindPath = propValue.$bind;
+  const schema = scope[bindPath];
+
+  if (!schema) return { ok: false, error: { code: "UNDECLARED_BINDING", path } };
+  if (schema.kind !== "string") return { ok: false, error: { code: "BINDING_TYPE_MISMATCH", path } };
+
+  return { ok: true };
+}
 ```
 
 ### Line Length
@@ -244,7 +289,8 @@ public Result process(
 
 ```
 
-Follow the surrounding file when deciding whether the closing delimiter belongs on its own line or with the final parameter.
+Follow the surrounding file when deciding whether the closing delimiter belongs on its own line or with the final
+parameter.
 
 ### Conditions and Expressions
 
@@ -281,7 +327,13 @@ final var values = List.of(
 
 ```
 
-Follow the repository's existing trailing-comma convention where the language supports it.
+TypeScript: multi-line object literals, parameter lists and argument lists end with a trailing comma, one entry per line.
+
+```ts
+return {
+  $bind: path.join("."),
+};
+```
 
 ### Comments
 
@@ -295,7 +347,8 @@ if (cached != null) {
 
 ```
 
-Do not place comments at arbitrary indentation levels or use spacing to visually separate comments from their associated code.
+Do not place comments at arbitrary indentation levels or use spacing to visually separate comments from their associated
+code.
 
 ### Annotations and Modifiers
 
@@ -314,9 +367,23 @@ Do not collapse or rearrange annotations merely for stylistic preference.
 
 ### Imports
 
-Keep imports formatted consistently with the surrounding file.
+Java imports are grouped in this order, each group alphabetical and separated by one blank line:
 
-Do not reorder, group, collapse, or expand imports unrelated to the change.
+1. everything that is not `java.*`/`javax.*` (third-party and project packages together);
+2. `java.*` and `javax.*`;
+3. `import static`.
+
+```java
+import com.fasterxml.jackson.databind.JsonNode;
+import com.rainframework.ui.protocol.validation.ValidationErrorCode;
+
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+```
+
+Remove unused imports. Use fully qualified names inline only to resolve a real clash.
 
 ### Type Layout
 
@@ -341,7 +408,8 @@ When modifying an existing file:
 
 > **Do not reformat code you did not need to change.**
 
-A small change should look like it was written by the same author who wrote the surrounding code.
+A small change should look like it was written by the same author who wrote the surrounding code — as long as that code
+follows this document.
 
 Do not:
 
@@ -414,25 +482,111 @@ Prefer:
 - small private methods for meaningful pieces of logic;
 - method names that explain intent.
 
-Avoid deeply nested control flow when guard clauses or extraction would make the code clearer.
-
 Do not extract every few lines into a method merely to make a method shorter.
+
+---
+
+## Local Variables (Java)
+
+Declare locals with `final var`, including enhanced `for` variables, iterator variables and try-with-resources.
+
+```java
+for (final var it = propsNode.fields(); it.hasNext(); ) {
+    final var entry = it.next();
+
+    props.put(entry.getKey(), entry.getValue());
+}
+
+try (final var stream = Files.list(validDir)) {
+    ...
+}
+```
+
+Use an explicit type without `final` only when the variable is reassigned (counters, a variable assigned inside `try`):
+
+```java
+int index = 0;
+JsonNode root;
+```
+
+Build collections with the type on the constructor: `final var props = new HashMap<String, JsonNode>();`.
 
 ---
 
 ## Control Flow
 
-Prefer the control-flow style already used by the project.
+These are mandatory, not preferences:
 
-General principles:
-
-- Use guard clauses for invalid or terminal conditions.
-- Avoid unnecessary `else` blocks after a return.
-- Avoid deeply nested conditions.
-- Prefer pattern matching or modern language features when they are already used by the codebase.
-- Use loops when they make side effects or early exits clearer.
-- Use functional operations when they improve clarity rather than merely reducing line count.
+- **Early return.** Handle invalid and terminal cases first with a guard (`return`, `throw`, `continue`, `yield`), then
+  write the main path unindented.
+- **No `else` after a branch that exits.** If the `if` returns/throws/yields, the rest is simply the next statement.
+- **No `else if` chains.** Two branches is the maximum. With more, use a `switch` on the discriminant, independent guard
+  `if`s that each exit, or a lookup table.
+- **Maximum two levels of nesting** inside a method body. Deeper than that, invert the condition into a guard or extract
+  a method.
+- Use `switch` expressions and pattern matching (`instanceof TypeSchema.ListType listType`) instead of casts and chains.
+- Use loops when they make side effects or early exits clearer; use streams only when they are clearer, not shorter.
 - Do not use clever expressions when a straightforward branch is easier to understand.
+
+Bad:
+
+```ts
+if (propName === "action") {
+  if (typeof propValue === "string") {
+    ...
+  } else {
+    return { ok: false, ... };
+  }
+} else if (propName === "disabled") {
+  return this.validateBoolOrBinding(propValue, path, scope);
+} else if (propName === "payload") {
+  return { ok: true };
+}
+```
+
+Good:
+
+```ts
+switch (propName) {
+  case "action":
+    return this.validateActionProp(propValue, path);
+  case "disabled":
+    return this.validateBoolOrBinding(propValue, path, scope);
+  case "payload":
+    // Paired validation happens in validateProps after all per-key checks.
+    return { ok: true };
+}
+```
+
+```java
+if (!isBinding(sourceBinding)) {
+    return ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
+}
+
+final var bindPath = sourceBinding.get("$bind").asText();
+...
+```
+
+---
+
+## TypeScript
+
+- No `as any`. Narrow through the discriminant (`entry.kind === "object"`) so the compiler knows the type; if a cast is
+  truly needed, cast to the precise type (`{} as { [K in keyof Schema]: Binding<unknown> }`).
+- Name unused callback parameters `_`.
+- Prefer short names when the scope is small and the meaning is obvious: `entry`, `path`, `prefix`, not `schemaEntry`,
+  `fullPath`, `scopePrefix`.
+- Build paths as arrays and join once (`[...prefix, key]` then `path.join(".")`) instead of branching on emptiness.
+- A long generic parameter list is wrapped one parameter per line, like any other parameter list:
+
+```ts
+export function createPropertyProxy<
+  Schema extends Record<string, TypeSchema>
+>(
+  schema: Schema,
+  prefix: string[] = [],
+): { [K in keyof Schema]: Binding<unknown> } {
+```
 
 ---
 
@@ -617,6 +771,9 @@ Keep:
 
 Do not move code between layers unless the task requires it.
 
+Group Java types by feature into subpackages once a feature has more than one type. Example: the validator, its result,
+error and error code live in `com.rainframework.ui.protocol.validation`, not flat in `protocol`.
+
 ---
 
 ## APIs and Boundaries
@@ -690,9 +847,20 @@ For databases, caches, queues, APIs, and similar infrastructure:
 
 ## Documentation and Generated Files
 
-When changing behavior documented elsewhere, update the relevant documentation if the repository expects documentation to stay synchronized.
+When changing behavior documented elsewhere, update the relevant documentation if the repository expects documentation
+to stay synchronized.
 
 Do not update unrelated documentation.
+
+Markdown files wrap prose at **120 columns**. Continuation lines of a list item are indented to align with the item's
+text. A bold label followed by a list (`**Why:**`) gets a blank line before the list, and never has trailing whitespace.
+
+```markdown
+**Why:**
+
+- Mojang released official mappings, and Fabric now recommends them over Yarn as the primary mappings source, even for
+  versions like 1.21.1 that predate the unobfuscated release.
+```
 
 Do not manually edit generated files unless the repository explicitly requires it.
 
@@ -749,23 +917,23 @@ Do not:
 When working on this repository:
 
 1. **Read before writing.**  
-Inspect the target file and nearby code before making architectural or stylistic decisions.
+   Inspect the target file and nearby code before making architectural or stylistic decisions.
 2. **Copy local patterns.**  
-The closest working example is usually more authoritative than a generic rule.
+   The closest working example is usually more authoritative than a generic rule.
 3. **Reuse before creating.**  
-Search for existing utilities, services, abstractions, helpers, and infrastructure.
+   Search for existing utilities, services, abstractions, helpers, and infrastructure.
 4. **Keep boundaries intact.**  
-Put behavior in the layer responsible for it.
+   Put behavior in the layer responsible for it.
 5. **Prefer explicit dependencies.**  
-Make important dependencies visible rather than hiding them behind global state.
+   Make important dependencies visible rather than hiding them behind global state.
 6. **Change only what is necessary.**  
-Do not use the task as an excuse for unrelated refactoring.
+   Do not use the task as an excuse for unrelated refactoring.
 7. **Preserve behavior.**  
-A stylistic change must not accidentally alter runtime behavior.
+   A stylistic change must not accidentally alter runtime behavior.
 8. **Test meaningful behavior.**  
-Add or update tests when the affected area has tests and the change introduces new behavior.
+   Add or update tests when the affected area has tests and the change introduces new behavior.
 9. **Follow repository conventions over personal preference.**  
-Consistency is more important than theoretical "best practices."
+   Consistency is more important than theoretical "best practices."
 10. **When uncertain, inspect more code before inventing a pattern.**  
-Existing code is the primary source of truth.
+    Existing code is the primary source of truth.
 

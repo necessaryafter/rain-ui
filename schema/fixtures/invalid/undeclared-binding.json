@@ -2,12 +2,18 @@
   "schemaVersion": 0,
   "id": "test:binding",
   "properties": {
-    "title": { "kind": "string" }
+    "title": {
+      "kind": "string"
+    }
   },
   "actions": {},
   "root": {
     "type": "text",
-    "props": { "value": { "$bind": "undeclaredProperty" } },
+    "props": {
+      "value": {
+        "$bind": "undeclaredProperty"
+      }
+    },
     "children": []
   }
 }

@@ -1,0 +1,15 @@
+package com.rainframework.ui.protocol.validation;
+
+public enum ValidationErrorCode {
+    UNKNOWN_SCHEMA_VERSION,
+    UNKNOWN_COMPONENT,
+    UNKNOWN_PROP,
+    INVALID_PROP_TYPE,
+    UNDECLARED_BINDING,
+    BINDING_TYPE_MISMATCH,
+    UNDECLARED_ACTION,
+    PAYLOAD_SCHEMA_MISMATCH,
+    DUPLICATE_SCREEN_ID,
+    INVALID_ID,
+    LIMIT_EXCEEDED
+}

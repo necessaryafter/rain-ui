@@ -10,31 +10,32 @@ export interface ActionRef<P extends TypeSchema = TypeSchema> {
 }
 
 // Build-time property proxy: accessing p.property returns { $bind: "property" }
-export function createPropertyProxy<Schema extends Record<string, TypeSchema>>(
-    schema: Schema,
-    scopePrefix: string[] = []
+export function createPropertyProxy<
+  Schema extends Record<string, TypeSchema>
+>(
+  schema: Schema,
+  prefix: string[] = [],
 ): { [K in keyof Schema]: Binding<unknown> } {
-    return new Proxy({} as any, {
-    get(_target, key: string | symbol) {
-      if (typeof key !== "string") {
-        return undefined;
-      }
+  return new Proxy({} as { [K in keyof Schema]: Binding<unknown> }, {
+    get(_, key: string | symbol) {
+      if (typeof key !== "string") return undefined;
 
-      const schemaEntry = schema[key as keyof Schema];
-      if (!schemaEntry) {
+      const entry = schema[key];
+      if (!entry) {
         throw new Error(`Unknown property: ${key}`);
       }
 
-      const fullPath = scopePrefix.length > 0 ? `${scopePrefix.join(".")}.${key}` : key;
+      const path = [...prefix, key];
 
-      // For object-typed properties, return a recursive proxy for nested access
-      if ((schemaEntry as any).kind === "object") {
-        return createPropertyProxy((schemaEntry as any).fields, [...scopePrefix, key]);
+      if (entry.kind === "object") {
+        return createPropertyProxy(entry.fields, path);
       }
 
-      return { $bind: fullPath };
+      return {
+        $bind: path.join("."),
+      };
     },
-    });
+  });
 }
 
 // Build-time action proxy: accessing a["shop:buy"] returns ActionRef with id and schema

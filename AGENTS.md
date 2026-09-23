@@ -8,5 +8,5 @@ método, do campo ou da constante já diz o que é, não comente. Vale para java
 
 - Não precisa: um javadoc em `DataSaveCause.QUIT` dizendo que é quando o jogador sai do servidor.
 - Precisa: por que o save da morte roda depois que o inventário cai. Se rodasse antes, um crash logo depois devolveria
-ao jogador o que ficou no chão.
+  ao jogador o que ficou no chão.
 

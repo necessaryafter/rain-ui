@@ -5,7 +5,9 @@
   "actions": {},
   "root": {
     "type": "text",
-    "props": { "value": "Hello" },
+    "props": {
+      "value": "Hello"
+    },
     "children": []
   }
 }

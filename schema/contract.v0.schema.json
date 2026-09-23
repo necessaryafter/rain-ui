@@ -3,7 +3,13 @@
   "title": "Rain UI Contract Schema v0",
   "description": "JSON Schema for Rain UI screen contracts (schemaVersion 0)",
   "type": "object",
-  "required": ["schemaVersion", "id", "properties", "actions", "root"],
+  "required": [
+    "schemaVersion",
+    "id",
+    "properties",
+    "actions",
+    "root"
+  ],
   "properties": {
     "schemaVersion": {
       "type": "integer",
@@ -38,84 +44,143 @@
   "definitions": {
     "TypeSchema": {
       "oneOf": [
-        { "$ref": "#/definitions/TypeString" },
-        { "$ref": "#/definitions/TypeInt" },
-        { "$ref": "#/definitions/TypeLong" },
-        { "$ref": "#/definitions/TypeBool" },
-        { "$ref": "#/definitions/TypeItem" },
-        { "$ref": "#/definitions/TypeList" },
-        { "$ref": "#/definitions/TypeObject" }
+        {
+          "$ref": "#/definitions/TypeString"
+        },
+        {
+          "$ref": "#/definitions/TypeInt"
+        },
+        {
+          "$ref": "#/definitions/TypeLong"
+        },
+        {
+          "$ref": "#/definitions/TypeBool"
+        },
+        {
+          "$ref": "#/definitions/TypeItem"
+        },
+        {
+          "$ref": "#/definitions/TypeList"
+        },
+        {
+          "$ref": "#/definitions/TypeObject"
+        }
       ],
       "description": "Type schema for properties, actions, and object fields"
     },
     "TypeString": {
       "type": "object",
-      "required": ["kind"],
+      "required": [
+        "kind"
+      ],
       "properties": {
-        "kind": { "const": "string" }
+        "kind": {
+          "const": "string"
+        }
       },
       "additionalProperties": false
     },
     "TypeInt": {
       "type": "object",
-      "required": ["kind"],
+      "required": [
+        "kind"
+      ],
       "properties": {
-        "kind": { "const": "int" }
+        "kind": {
+          "const": "int"
+        }
       },
       "additionalProperties": false
     },
     "TypeLong": {
       "type": "object",
-      "required": ["kind"],
+      "required": [
+        "kind"
+      ],
       "properties": {
-        "kind": { "const": "long" }
+        "kind": {
+          "const": "long"
+        }
       },
       "additionalProperties": false
     },
     "TypeBool": {
       "type": "object",
-      "required": ["kind"],
+      "required": [
+        "kind"
+      ],
       "properties": {
-        "kind": { "const": "bool" }
+        "kind": {
+          "const": "bool"
+        }
       },
       "additionalProperties": false
     },
     "TypeItem": {
       "type": "object",
-      "required": ["kind"],
+      "required": [
+        "kind"
+      ],
       "properties": {
-        "kind": { "const": "item" }
+        "kind": {
+          "const": "item"
+        }
       },
       "additionalProperties": false
     },
     "TypeList": {
       "type": "object",
-      "required": ["kind", "of"],
+      "required": [
+        "kind",
+        "of"
+      ],
       "properties": {
-        "kind": { "const": "list" },
-        "of": { "$ref": "#/definitions/TypeSchema" }
+        "kind": {
+          "const": "list"
+        },
+        "of": {
+          "$ref": "#/definitions/TypeSchema"
+        }
       },
       "additionalProperties": false
     },
     "TypeObject": {
       "type": "object",
-      "required": ["kind", "fields"],
+      "required": [
+        "kind",
+        "fields"
+      ],
       "properties": {
-        "kind": { "const": "object" },
+        "kind": {
+          "const": "object"
+        },
         "fields": {
           "type": "object",
-          "additionalProperties": { "$ref": "#/definitions/TypeSchema" }
+          "additionalProperties": {
+            "$ref": "#/definitions/TypeSchema"
+          }
         }
       },
       "additionalProperties": false
     },
     "ComponentNode": {
       "type": "object",
-      "required": ["type", "props", "children"],
+      "required": [
+        "type",
+        "props",
+        "children"
+      ],
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["column", "row", "text", "item", "button", "list"],
+          "enum": [
+            "column",
+            "row",
+            "text",
+            "item",
+            "button",
+            "list"
+          ],
           "description": "Component type"
         },
         "props": {
@@ -124,7 +189,9 @@
         },
         "children": {
           "type": "array",
-          "items": { "$ref": "#/definitions/ComponentNode" },
+          "items": {
+            "$ref": "#/definitions/ComponentNode"
+          },
           "description": "Child component nodes"
         }
       },
