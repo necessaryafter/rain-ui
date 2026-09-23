@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 0,
+  "id": "test:fixture",
+  "properties": {},
+  "actions": {},
+  "root": {
+    "type": "button",
+    "props": {
+      "action": "test:nonexistent",
+      "disabled": false
+    },
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "value": "Click"
+        },
+        "children": []
+      }
+    ]
+  }
+}

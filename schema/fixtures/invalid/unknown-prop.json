@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 0,
+  "id": "test:unknown-prop",
+  "properties": {},
+  "actions": {},
+  "root": {
+    "type": "text",
+    "props": {
+      "value": "Test",
+      "invalidProp": "should-not-exist"
+    },
+    "children": []
+  }
+}

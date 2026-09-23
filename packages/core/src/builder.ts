@@ -1,7 +1,6 @@
 import type { TypeSchema, TString, TInt, TLong, TBool, TItem, TList, TObject } from "./types";
 
 // Compile-time schema builders (t.* API) with non-widening generics
-
 export const t = {
     string: (): TString => ({ kind: "string" }),
     int: (): TInt => ({ kind: "int" }),
@@ -13,7 +12,6 @@ export const t = {
 };
 
 // Identity generics that preserve literal type inference (no widening)
-
 export function defineProperties<P extends Record<string, TypeSchema>>(props: P): P {
     return props;
 }

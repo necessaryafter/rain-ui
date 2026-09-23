@@ -11,6 +11,9 @@
       "bin": {
         "rain": "index.ts",
       },
+      "dependencies": {
+        "typescript": "^5.3",
+      },
     },
     "packages/core": {
       "name": "@rain-ui/core",
@@ -21,5 +24,7 @@
     "@rain-ui/cli": ["@rain-ui/cli@workspace:packages/cli"],
 
     "@rain-ui/core": ["@rain-ui/core@workspace:packages/core"],
+
+    "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
   }
 }

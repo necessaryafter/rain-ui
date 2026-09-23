@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 0,
+  "id": "test:binding-mismatch",
+  "properties": {
+    "myBool": {
+      "kind": "bool"
+    }
+  },
+  "actions": {},
+  "root": {
+    "type": "text",
+    "props": {
+      "value": {
+        "$bind": "myBool"
+      }
+    },
+    "children": []
+  }
+}

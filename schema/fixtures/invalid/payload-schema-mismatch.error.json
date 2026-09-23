@@ -1,0 +1,4 @@
+{
+  "code": "PAYLOAD_SCHEMA_MISMATCH",
+  "path": "root.props.payload.itemId"
+}

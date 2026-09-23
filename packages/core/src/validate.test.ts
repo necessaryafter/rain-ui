@@ -2,39 +2,35 @@ import { describe, it, expect } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
 
-// Note: These tests are RED/FAILING in Phase A — validateContract() doesn't exist yet.
-// They are specification for M1 Phase B implementation.
-
-// TODO: Import validateContract once implemented in validate.ts
-// import { validateContract, ValidationErrorCode } from "./validate";
+import { validateContract } from "./validate";
 
 // Load fixtures at module scope, before describe() registration (not inside beforeAll).
 // This fixes the test-collection-time ordering issue where nested describe() bodies
 // run synchronously before beforeAll() executes, leaving fixture arrays empty.
-const fixturesDir = path.join(import.meta.dir, "../../../../schema/fixtures");
+const fixturesDir = path.join(process.cwd(), "schema", "fixtures");
 
-const validFixtures: { name: string; content: any }[] = [];
+const validFixtures: { name: string; content: any; sourceBytes: number }[] = [];
 const validDir = path.join(fixturesDir, "valid");
 if (fs.existsSync(validDir)) {
   fs.readdirSync(validDir)
-    .filter((f) => f.endsWith(".json"))
+    .filter((f) => f.endsWith(".json") && !f.endsWith(".error.json"))
     .forEach((file) => {
-      const content = JSON.parse(
-        fs.readFileSync(path.join(validDir, file), "utf-8")
-      );
-      validFixtures.push({ name: file.replace(".json", ""), content });
+      const text = fs.readFileSync(path.join(validDir, file), "utf-8");
+      const content = JSON.parse(text);
+      const sourceBytes = Buffer.byteLength(text, "utf-8");
+      validFixtures.push({ name: file.replace(".json", ""), content, sourceBytes });
     });
 }
 
-const invalidFixtures: { name: string; content: any; expected: any }[] = [];
+const invalidFixtures: { name: string; content: any; sourceBytes: number; expected: any }[] = [];
 const invalidDir = path.join(fixturesDir, "invalid");
 if (fs.existsSync(invalidDir)) {
   fs.readdirSync(invalidDir)
     .filter((f) => f.endsWith(".json") && !f.endsWith(".error.json"))
     .forEach((file) => {
-      const content = JSON.parse(
-        fs.readFileSync(path.join(invalidDir, file), "utf-8")
-      );
+      const text = fs.readFileSync(path.join(invalidDir, file), "utf-8");
+      const content = JSON.parse(text);
+      const sourceBytes = Buffer.byteLength(text, "utf-8");
       const errorFile = file.replace(".json", ".error.json");
       const errorPath = path.join(invalidDir, errorFile);
       if (fs.existsSync(errorPath)) {
@@ -42,6 +38,7 @@ if (fs.existsSync(invalidDir)) {
         invalidFixtures.push({
           name: file.replace(".json", ""),
           content,
+          sourceBytes,
           expected,
         });
       }
@@ -49,108 +46,162 @@ if (fs.existsSync(invalidDir)) {
 }
 
 describe("Contract Validator (fixture-driven)", () => {
-  describe("Valid fixtures", () => {
-    validFixtures.forEach(({ name, content }) => {
-      it(`accepts valid fixture: ${name}`, () => {
-        // TODO: implement validate() function
-        // const result = validateContract(content);
-        // expect(result.ok).toBe(true);
+  it("loaded fixtures", () => {
+    expect(validFixtures.length).toBeGreaterThan(0);
+    expect(invalidFixtures.length).toBeGreaterThan(0);
+  });
 
-        // Placeholder: this test is currently skipped/red
-        expect.unreachable(`validateContract not yet implemented`);
+  describe("Valid fixtures", () => {
+    validFixtures.forEach(({ name, content, sourceBytes }) => {
+      it(`accepts valid fixture: ${name}`, () => {
+        const result = validateContract(content, { sourceBytes });
+        expect(result.ok).toBe(true);
       });
     });
   });
 
   describe("Invalid fixtures", () => {
-    invalidFixtures.forEach(({ name, content, expected }) => {
+    invalidFixtures.forEach(({ name, content, sourceBytes, expected }) => {
       it(`rejects invalid fixture ${name} with code ${expected.code}`, () => {
-        // TODO: implement validate() function
-        // const result = validateContract(content);
-        // expect(result.ok).toBe(false);
-        // expect(result.error.code).toBe(expected.code);
-        // expect(result.error.path).toBe(expected.path);
-
-        // Placeholder: this test is currently skipped/red
-        expect.unreachable(
-          `validateContract not yet implemented for error case: ${expected.code}`
-        );
+        const result = validateContract(content, { sourceBytes });
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+          expect(result.error.code).toBe(expected.code);
+          expect(result.error.path).toBe(expected.path);
+        }
       });
     });
   });
 
   describe("Component whitelist", () => {
     it("rejects unknown components", () => {
-      // TODO: Test via fixture
-      expect.unreachable("Test not yet implemented");
+      const fixture = invalidFixtures.find((f) => f.name === "unknown-component");
+      expect(fixture).toBeDefined();
+      if (fixture) {
+        const result = validateContract(fixture.content, { sourceBytes: fixture.sourceBytes });
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.error.code).toBe("UNKNOWN_COMPONENT");
+      }
     });
 
     it("accepts known components (column, row, text, item, button, list)", () => {
-      // TODO: Test via fixture
-      expect.unreachable("Test not yet implemented");
+      const fixture = validFixtures.find((f) => f.name === "shop");
+      expect(fixture).toBeDefined();
+      if (fixture) {
+        const result = validateContract(fixture.content, { sourceBytes: fixture.sourceBytes });
+        expect(result.ok).toBe(true);
+      }
     });
   });
 
   describe("Binding resolution", () => {
     it("accepts bindings to declared root properties", () => {
-      // TODO: Test via fixture
-      expect.unreachable("Test not yet implemented");
+      const fixture = validFixtures.find((f) => f.name === "shop");
+      expect(fixture).toBeDefined();
+      if (fixture) {
+        const result = validateContract(fixture.content, { sourceBytes: fixture.sourceBytes });
+        expect(result.ok).toBe(true);
+      }
     });
 
     it("rejects bindings to undeclared properties", () => {
-      // TODO: Test via fixture
-      expect.unreachable("Test not yet implemented");
+      const fixture = invalidFixtures.find((f) => f.name === "undeclared-binding");
+      expect(fixture).toBeDefined();
+      if (fixture) {
+        const result = validateContract(fixture.content, { sourceBytes: fixture.sourceBytes });
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.error.code).toBe("UNDECLARED_BINDING");
+      }
     });
 
     it("accepts bindings within list item scope", () => {
-      // TODO: Test via fixture (shop fixture covers this)
-      expect.unreachable("Test not yet implemented");
+      const fixture = validFixtures.find((f) => f.name === "shop");
+      expect(fixture).toBeDefined();
+      if (fixture) {
+        const result = validateContract(fixture.content, { sourceBytes: fixture.sourceBytes });
+        expect(result.ok).toBe(true);
+      }
     });
 
     it("validates binding type matches property type", () => {
-      // TODO: Test via fixture (e.g., string binding to int property should fail)
-      expect.unreachable("Test not yet implemented");
+      const fixture = invalidFixtures.find((f) => f.name === "binding-type-mismatch");
+      expect(fixture).toBeDefined();
+      if (fixture) {
+        const result = validateContract(fixture.content, { sourceBytes: fixture.sourceBytes });
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.error.code).toBe("BINDING_TYPE_MISMATCH");
+      }
     });
   });
 
   describe("Action validation", () => {
     it("accepts actions with declared payloads", () => {
-      // TODO: Test via fixture
-      expect.unreachable("Test not yet implemented");
+      const fixture = validFixtures.find((f) => f.name === "shop");
+      expect(fixture).toBeDefined();
+      if (fixture) {
+        const result = validateContract(fixture.content, { sourceBytes: fixture.sourceBytes });
+        expect(result.ok).toBe(true);
+      }
     });
 
     it("rejects undeclared actions", () => {
-      // TODO: Test via fixture
-      expect.unreachable("Test not yet implemented");
+      const fixture = invalidFixtures.find((f) => f.name === "undeclared-action");
+      expect(fixture).toBeDefined();
+      if (fixture) {
+        const result = validateContract(fixture.content, { sourceBytes: fixture.sourceBytes });
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.error.code).toBe("UNDECLARED_ACTION");
+      }
     });
 
     it("validates button payload matches action schema", () => {
-      // TODO: Test via fixture
-      expect.unreachable("Test not yet implemented");
+      const fixture = invalidFixtures.find((f) => f.name === "payload-schema-mismatch");
+      expect(fixture).toBeDefined();
+      if (fixture) {
+        const result = validateContract(fixture.content, { sourceBytes: fixture.sourceBytes });
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.error.code).toBe("PAYLOAD_SCHEMA_MISMATCH");
+      }
     });
   });
 
   describe("Limits", () => {
     it("accepts contracts at the limit boundary", () => {
-      // TODO: Test via limit-boundary fixtures
-      expect.unreachable("Test not yet implemented");
+      const boundaryFixtures = validFixtures.filter((f) => f.name.includes("limit-") && f.name.includes("boundary"));
+      for (const fixture of boundaryFixtures) {
+        const result = validateContract(fixture.content, { sourceBytes: fixture.sourceBytes });
+        expect(result.ok).toBe(true);
+      }
     });
 
     it("rejects contracts exceeding limits", () => {
-      // TODO: Test via limit-exceeded fixtures
-      expect.unreachable("Test not yet implemented");
+      const exceededFixtures = invalidFixtures.filter((f) => f.name.includes("limit-") && f.name.includes("exceeded"));
+      for (const fixture of exceededFixtures) {
+        const result = validateContract(fixture.content, { sourceBytes: fixture.sourceBytes });
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.error.code).toBe("LIMIT_EXCEEDED");
+      }
     });
   });
 
   describe("Error codes and paths", () => {
     it("returns stable error codes (not error messages)", () => {
-      // TODO: Verify error.code is one of the known enum values
-      expect.unreachable("Test not yet implemented");
+      const result = validateContract(invalidFixtures[0].content, { sourceBytes: invalidFixtures[0].sourceBytes });
+      if (!result.ok) {
+        expect(typeof result.error.code).toBe("string");
+        expect(result.error.code.length).toBeGreaterThan(0);
+      }
     });
 
     it("returns accurate node paths (e.g., root.children[2].props.value)", () => {
-      // TODO: Test via fixture with explicit path expectation
-      expect.unreachable("Test not yet implemented");
+      const fixture = invalidFixtures.find((f) => f.name === "undeclared-binding");
+      expect(fixture).toBeDefined();
+      if (fixture) {
+        const result = validateContract(fixture.content, { sourceBytes: fixture.sourceBytes });
+        if (!result.ok) {
+          expect(result.error.path).toBe(fixture.expected.path);
+        }
+      }
     });
   });
 });

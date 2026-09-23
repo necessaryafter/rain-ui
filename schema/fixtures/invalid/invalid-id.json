@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 0,
+  "id": "InvalidId",
+  "properties": {},
+  "actions": {},
+  "root": {
+    "type": "text",
+    "props": {
+      "value": "Test"
+    },
+    "children": []
+  }
+}

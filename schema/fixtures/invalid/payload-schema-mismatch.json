@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 0,
+  "id": "test:payload-mismatch",
+  "properties": {},
+  "actions": {
+    "test:buy": {
+      "kind": "object",
+      "fields": {
+        "itemId": {
+          "kind": "string"
+        }
+      }
+    }
+  },
+  "root": {
+    "type": "button",
+    "props": {
+      "action": "test:buy",
+      "payload": {
+        "itemId": 123
+      },
+      "disabled": false
+    },
+    "children": [
+      {
+        "type": "text",
+        "props": {
+          "value": "Buy"
+        },
+        "children": []
+      }
+    ]
+  }
+}

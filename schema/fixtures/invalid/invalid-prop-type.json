@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 0,
+  "id": "test:fixture",
+  "properties": {},
+  "actions": {},
+  "root": {
+    "type": "text",
+    "props": {
+      "value": 123
+    },
+    "children": []
+  }
+}
