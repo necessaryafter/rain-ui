@@ -2,6 +2,8 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
+import { findUnusedProperties } from "@rain-ui/core";
+
 import { buildScreens, writeOutput, type Manifest } from "./build";
 import { findNondeterministicCalls } from "./determinism";
 import { registerJsxPlugin } from "./jsx";
@@ -78,6 +80,15 @@ async function build({ dir, out }: BuildOptions): Promise<number> {
   for (const { file, line, call } of warnings) {
     const location = line === undefined ? path.relative(dir, file) : `${path.relative(dir, file)}:${line}`;
     console.error(`warning: ${call} in ${location}: the value is frozen at build time`);
+  }
+
+  for (const { source, compiled } of screens) {
+    for (const property of findUnusedProperties(compiled.contract)) {
+      console.error(
+        `warning: unused property ${property} in ${compiled.id} (${path.relative(dir, source)}): ` +
+        `the server would send it but the screen never shows it`,
+      );
+    }
   }
 
   if (errors.length > 0) {
