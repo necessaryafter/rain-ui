@@ -4,6 +4,10 @@
   "workspaces": {
     "": {
       "name": "rain-ui-monorepo",
+      "devDependencies": {
+        "@rain-ui/cli": "workspace:*",
+        "@rain-ui/core": "workspace:*",
+      },
     },
     "packages/cli": {
       "name": "@rain-ui/cli",
@@ -12,6 +16,7 @@
         "rain": "index.ts",
       },
       "dependencies": {
+        "@rain-ui/core": "workspace:*",
         "typescript": "^5.3",
       },
     },
