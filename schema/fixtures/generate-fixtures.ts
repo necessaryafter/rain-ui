@@ -95,6 +95,55 @@ invalidFixtures["invalid-id"].contract = {
     root: textNode("Test"),
 };
 
+const MAX_CONTRACT_BYTES = 256 * 1024;
+const MAX_JSON_DEPTH = 128;
+
+// Pads with spaces instead of a long string so MAX_STRING_LENGTH never triggers first.
+function padToBytes(contract: any, bytes: number): string {
+    const json = JSON.stringify(contract);
+    const text = json + " ".repeat(bytes - Buffer.byteLength(json, "utf-8") - 1) + "\n";
+    if (Buffer.byteLength(text, "utf-8") !== bytes) {
+        throw new Error(`padToBytes produced the wrong size for ${bytes}`);
+    }
+
+    return text;
+}
+
+// The top-level object or array counts as 1; scalars do not count.
+function jsonDepth(value: unknown): number {
+    if (value === null || typeof value !== "object") return 0;
+
+    const children = Array.isArray(value) ? value : Object.values(value);
+    return 1 + Math.max(0, ...children.map(jsonDepth));
+}
+
+// Nested object schemas are the only contract structure that nests without a domain limit of its own.
+// Each object schema adds 2 levels (itself + fields), so the leaf picks the parity: a string schema is 1 level,
+// an object schema with empty fields is 2.
+function contractWithJsonDepth(depth: number): any {
+    let schema: any = depth % 2 === 0 ? { kind: "object", fields: {} } : { kind: "string" };
+    while (jsonDepth(contractWithActionSchema(schema)) < depth) {
+        schema = { kind: "object", fields: { next: schema } };
+    }
+
+    const contract = contractWithActionSchema(schema);
+    if (jsonDepth(contract) !== depth) {
+        throw new Error(`contractWithJsonDepth produced depth ${jsonDepth(contract)} instead of ${depth}`);
+    }
+
+    return contract;
+}
+
+function contractWithActionSchema(schema: any): any {
+    return {
+        schemaVersion: 0,
+        id: "test:json-depth",
+        properties: {},
+        actions: { "test:deep": schema },
+        root: textNode("test"),
+    };
+}
+
 // Generate limit fixtures
 function generateLimitFixtures() {
     // MAX_NODES (2000/2001) - nodeCount increments for each node
@@ -145,6 +194,22 @@ function generateLimitFixtures() {
     const str1025 = "x".repeat(1025);
 
     return {
+        "limit-max-contract-bytes-boundary": {
+            text: padToBytes(createMinimalContract(textNode("test")), MAX_CONTRACT_BYTES),
+            limit: "MAX_CONTRACT_BYTES",
+        },
+        "limit-max-contract-bytes-exceeded": {
+            text: padToBytes(createMinimalContract(textNode("test")), MAX_CONTRACT_BYTES + 1),
+            limit: "MAX_CONTRACT_BYTES",
+        },
+        "limit-max-json-depth-boundary": {
+            contract: contractWithJsonDepth(MAX_JSON_DEPTH),
+            limit: "MAX_JSON_DEPTH",
+        },
+        "limit-max-json-depth-exceeded": {
+            contract: contractWithJsonDepth(MAX_JSON_DEPTH + 1),
+            limit: "MAX_JSON_DEPTH",
+        },
         "limit-max-nodes-boundary": { contract: maxNodesValid, limit: "MAX_NODES" },
         "limit-max-nodes-exceeded": { contract: maxNodesInvalid, limit: "MAX_NODES" },
         "limit-max-depth-boundary": { contract: { ...createMinimalContract(depthValid), root: depthValid }, limit: "MAX_DEPTH" },
@@ -201,9 +266,8 @@ function writeFixtures() {
         const jsonPath = path.join(fixturesDir, subdir, `${name}.json`);
         const errorPath = isValid ? null : path.join(fixturesDir, subdir, `${name}.error.json`);
 
-        // Minify if MAX_CONTRACT_BYTES, otherwise pretty-print
-        const jsonStr = JSON.stringify(data.contract);
-        fs.writeFileSync(jsonPath, jsonStr + "\n");
+        const text = "text" in data ? data.text : JSON.stringify(data.contract) + "\n";
+        fs.writeFileSync(jsonPath, text);
 
         if (errorPath) {
             const error = { code: "LIMIT_EXCEEDED", path: "root" };

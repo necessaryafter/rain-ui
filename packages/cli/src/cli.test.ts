@@ -1,127 +1,200 @@
-import { describe, it, expect, beforeAll } from "bun:test";
+import { describe, expect, it } from "bun:test";
+import * as crypto from "crypto";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
-import * as child_process from "child_process";
 
-// Note: These tests are RED/FAILING in Phase A — the rain build CLI doesn't exist yet.
-// They specify the M1 "Pronto quando" requirements.
+import { validateContract } from "@rain-ui/core";
 
-describe("rain build CLI", () => {
-  const projectRoot = path.join(import.meta.dir, "../../../..");
-  const examplesDir = path.join(projectRoot, "examples/shop");
-  const distDir = path.join(projectRoot, "dist");
+const projectRoot = path.join(import.meta.dir, "../../..");
+const cliPath = path.join(projectRoot, "packages/cli/index.ts");
+const shopDir = path.join(projectRoot, "examples/shop");
+const fixturesDir = path.join(import.meta.dir, "../test/fixtures");
 
-  describe("rain build examples/shop", () => {
-    it("generates dist/shop/main.json", () => {
-      // TODO: Implement rain build CLI
-      // const result = child_process.spawnSync("bun", ["run", "rain", "build", examplesDir], { cwd: projectRoot });
-      // expect(result.status).toBe(0);
-      // expect(fs.existsSync(path.join(distDir, "shop/main.json"))).toBe(true);
-      expect.unreachable("CLI not yet implemented");
-    });
+interface RunResult {
+  status: number | null;
+  stdout: string;
+  stderr: string;
+}
 
-    it("generates dist/manifest.json with sha256 entry for shop:main", () => {
-      // TODO: Implement rain build CLI
-      // expect(fs.existsSync(path.join(distDir, "manifest.json"))).toBe(true);
-      // const manifest = JSON.parse(fs.readFileSync(path.join(distDir, "manifest.json"), "utf-8"));
-      // expect(manifest.schemas["shop:main"]).toBeDefined();
-      // expect(manifest.schemas["shop:main"].sha256).toMatch(/^[a-f0-9]{64}$/);
-      expect.unreachable("CLI not yet implemented");
-    });
-  });
+function runRain(args: string[], cwd: string = projectRoot): RunResult {
+  const result = Bun.spawnSync(["bun", cliPath, ...args], { cwd });
 
-  describe("Split file vs single file determinism", () => {
-    it("produces identical JSON for split-file and single-file equivalent screens", () => {
-      // TODO: Create split/ and inline/ fixture directories with two screen definitions
-      // that are logically equivalent but structured differently (one splits contract,
-      // one inlines), then:
-      // const resultSplit = spawnSync("bun", ["run", "rain", "build", "fixtures/split"]);
-      // const resultInline = spawnSync("bun", ["run", "rain", "build", "fixtures/inline"]);
-      // const contractSplit = JSON.parse(fs.readFileSync("dist/split/screen.json"));
-      // const contractInline = JSON.parse(fs.readFileSync("dist/inline/screen.json"));
-      // expect(JSON.stringify(contractSplit)).toBe(JSON.stringify(contractInline));
-      expect.unreachable("Test not yet implemented");
-    });
-  });
+  return {
+    status: result.exitCode,
+    stdout: result.stdout.toString(),
+    stderr: result.stderr.toString(),
+  };
+}
 
-  describe("Module discovery and filtering", () => {
-    it("ignores modules without defineScreen default export", () => {
-      // TODO: Create fixture dir with modules: screen.tsx (has defineScreen),
-      // components.tsx (exports component, not screen), utilities.ts (no default export)
-      // Verify only screen.tsx is built
-      expect.unreachable("Test not yet implemented");
-    });
+function tempDir(): string {
+  return fs.mkdtempSync(path.join(os.tmpdir(), "rain-cli-"));
+}
 
-    it("fails build if two screens share the same id", () => {
-      // TODO: Create fixture dir with screen-a.tsx and screen-b.tsx both declaring id "test:dup"
-      // expect(spawnSync(...).status).not.toBe(0);
-      // expect(stderr).toContain("duplicate");
-      expect.unreachable("Test not yet implemented");
-    });
-  });
+function fixture(name: string): string {
+  return path.join(fixturesDir, name);
+}
 
-  describe("Determinism warnings", () => {
-    it("warns when component calls Math.random()", () => {
-      // TODO: Create fixture with component importing a helper that calls Math.random()
-      // const result = spawnSync("bun", ["run", "rain", "build", fixtureDir]);
-      // expect(result.stdout).toContain("Math.random()");
-      // expect(result.status).toBe(0); // warning doesn't fail build
-      expect.unreachable("Test not yet implemented");
-    });
+function build(dir: string, ...extra: string[]): { out: string; result: RunResult } {
+  const out = tempDir();
+  const result = runRain(["build", dir, "--out", out, ...extra]);
 
-    it("warns when component calls Date.now()", () => {
-      // TODO: Create fixture with component that uses Date.now()
-      expect.unreachable("Test not yet implemented");
-    });
+  return { out, result };
+}
 
-    it("warns when component calls new Date()", () => {
-      // TODO: Create fixture with component that uses new Date()
-      expect.unreachable("Test not yet implemented");
-    });
+function readManifest(out: string): any {
+  return JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf-8"));
+}
 
-    it("excludes warnings from node_modules", () => {
-      // TODO: Verify that if an imported dependency from node_modules uses Math.random(),
-      // no warning is emitted (only local code is scanned)
-      expect.unreachable("Test not yet implemented");
+function sha256(bytes: Buffer): string {
+  return crypto.createHash("sha256").update(bytes).digest("hex");
+}
+
+function sortKeys(value: unknown): unknown {
+  if (value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(sortKeys);
+
+  const sorted: Record<string, unknown> = {};
+  for (const key of Object.keys(value).sort()) {
+    sorted[key] = sortKeys((value as Record<string, unknown>)[key]);
+  }
+
+  return sorted;
+}
+
+describe("rain build", () => {
+  it("writes the contract and a manifest with its sha256", () => {
+    const { out, result } = build(shopDir);
+
+    expect(result.status).toBe(0);
+
+    const contractPath = path.join(out, "shop/main.json");
+    expect(fs.existsSync(contractPath)).toBe(true);
+
+    const manifest = readManifest(out);
+    expect(manifest).toEqual({
+      schemaVersion: 0,
+      screens: {
+        "shop:main": {
+          file: "shop/main.json",
+          sha256: sha256(fs.readFileSync(contractPath)),
+        },
+      },
     });
   });
 
-  describe("rain build --check determinism verification", () => {
-    it("succeeds on deterministic screen (examples/shop)", () => {
-      // TODO: Implement --check flag
-      // const result = spawnSync("bun", ["run", "rain", "build", examplesDir, "--check"]);
-      // expect(result.status).toBe(0);
-      expect.unreachable("--check flag not yet implemented");
-    });
+  it("writes canonical JSON with sorted keys and no whitespace", () => {
+    const { out, result } = build(shopDir);
 
-    it("fails on non-deterministic screen", () => {
-      // TODO: Create fixture with Date.now() baked into output
-      // const result = spawnSync("bun", ["run", "rain", "build", nondeterministicDir, "--check"]);
-      // expect(result.status).not.toBe(0);
-      // expect(result.stderr).toContain("hash");
-      expect.unreachable("--check flag not yet implemented");
-    });
+    expect(result.status).toBe(0);
 
-    it("runs build in two separate child processes for isolation", () => {
-      // TODO: Verify via test that --check actually spawns 2 separate processes (checking that
-      // any stateful build state would diverge). This is more of an implementation detail test.
-      expect.unreachable("Test not yet implemented");
-    });
+    const text = fs.readFileSync(path.join(out, "shop/main.json"), "utf-8");
+    expect(text).toBe(JSON.stringify(sortKeys(JSON.parse(text))));
   });
 
-  describe("Canonical JSON and hashing", () => {
-    it("produces canonical JSON (sorted object keys)", () => {
-      // TODO: Verify that output contract JSON has all object keys in sorted order
-      // const contract = JSON.parse(fs.readFileSync("dist/shop/main.json"));
-      // const contractStr = JSON.stringify(contract);
-      // const reparsed = JSON.stringify(JSON.parse(contractStr));
-      // expect(contractStr).toBe(reparsed);
-      expect.unreachable("Test not yet implemented");
-    });
+  it("writes a contract that passes validation", () => {
+    const { out, result } = build(shopDir);
 
-    it("computes stable sha256 hash for identical contract", () => {
-      // TODO: Build the same screen twice, verify hashes match
-      expect.unreachable("Test not yet implemented");
-    });
+    expect(result.status).toBe(0);
+
+    const text = fs.readFileSync(path.join(out, "shop/main.json"), "utf-8");
+    const validation = validateContract(JSON.parse(text), { sourceBytes: Buffer.byteLength(text, "utf-8") });
+    expect(validation).toEqual({ ok: true });
+  });
+
+  it("writes to <cwd>/dist when --out is not given", () => {
+    const cwd = tempDir();
+    const result = runRain(["build", shopDir], cwd);
+
+    expect(result.status).toBe(0);
+    expect(fs.existsSync(path.join(cwd, "dist/shop/main.json"))).toBe(true);
+    expect(fs.existsSync(path.join(cwd, "dist/manifest.json"))).toBe(true);
+  });
+
+  it("produces the same bytes for a split-file screen and its single-file equivalent", () => {
+    const split = build(shopDir);
+    const inline = build(fixture("inline-shop"));
+
+    expect(split.result.status).toBe(0);
+    expect(inline.result.status).toBe(0);
+
+    const splitBytes = fs.readFileSync(path.join(split.out, "shop/main.json"));
+    const inlineBytes = fs.readFileSync(path.join(inline.out, "shop/main.json"));
+    expect(inlineBytes.equals(splitBytes)).toBe(true);
+    expect(readManifest(inline.out)).toEqual(readManifest(split.out));
+  });
+
+  it("produces the same manifest on two builds of the same screens", () => {
+    const first = build(shopDir);
+    const second = build(shopDir);
+
+    expect(first.result.status).toBe(0);
+    expect(second.result.status).toBe(0);
+    expect(readManifest(second.out)).toEqual(readManifest(first.out));
+  });
+});
+
+describe("rain build screen discovery", () => {
+  it("only builds modules whose default export comes from defineScreen", () => {
+    const { out, result } = build(fixture("discovery"));
+
+    expect(result.status).toBe(0);
+    expect(Object.keys(readManifest(out).screens)).toEqual(["test:discovery"]);
+  });
+
+  it("fails when two screens share the same id", () => {
+    const { result } = build(fixture("duplicate-id"));
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("test:dup");
+    expect(result.stderr.toLowerCase()).toContain("duplicate");
+  });
+
+  it("fails with the error code and node path when a screen is invalid", () => {
+    const { result } = build(fixture("invalid-screen"));
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("UNDECLARED_ACTION");
+    expect(result.stderr).toContain("root.props.action");
+  });
+});
+
+describe("rain build determinism warnings", () => {
+  it("warns about Math.random(), Date.now() and new Date() in imported local modules", () => {
+    const { result } = build(fixture("determinism-warnings"));
+
+    expect(result.status).toBe(0);
+
+    const lines = result.stderr.split("\n");
+    const warningFor = (call: string, file: string) =>
+      lines.some((line) => line.includes(call) && line.includes(file));
+
+    expect(warningFor("Math.random()", path.join("components", "Random.tsx"))).toBe(true);
+    expect(warningFor("Date.now()", path.join("helpers", "time.ts"))).toBe(true);
+    expect(warningFor("new Date()", path.join("helpers", "time.ts"))).toBe(true);
+  });
+
+  it("does not warn about calls inside node_modules", () => {
+    const { out, result } = build(fixture("node-modules-warning"));
+
+    expect(result.status).toBe(0);
+    expect(Object.keys(readManifest(out).screens)).toEqual(["test:node-modules"]);
+    expect(result.stderr).not.toContain("Math.random()");
+  });
+});
+
+describe("rain build --check", () => {
+  it("passes on a deterministic screen", () => {
+    const { result } = build(shopDir, "--check");
+
+    expect(result.status).toBe(0);
+  });
+
+  it("fails when two builds produce different hashes", () => {
+    const { result } = build(fixture("nondeterministic"), "--check");
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("test:nondeterministic");
+    expect(result.stderr.toLowerCase()).toContain("hash");
   });
 });

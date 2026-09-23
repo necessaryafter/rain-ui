@@ -40,3 +40,34 @@ root-property access from item scope in a future milestone.
 
 **Impact:** Developers must pass all needed data through the item properties themselves, not try to reference outer
 scope. This aligns with the pattern shown in the spec's shop example.
+
+## 3. JSON depth limit, error paths and build output (v0)
+
+**Status:** Decided in M1
+
+**What:**
+
+- `MAX_JSON_DEPTH` is **128**, not 32. It applies to every JSON document (contract, properties, payload) and is
+  checked by a streaming counter before the document is parsed into a tree.
+- Depth counts containers: the top-level object or array is 1, scalars add nothing. `{"a":{"b":1}}` has depth 2.
+- An error that applies to the whole document (byte size, JSON depth) has the path `root`.
+- Properties are limited to 256 KiB and 1000 elements per array; interaction payloads to 8 KiB and depth 8. These
+  checks do not look at the schema.
+- `rain build <dir>` writes to `<cwd>/dist` by default; `--out <dir>` overrides it. The manifest is:
+
+```json
+{
+  "schemaVersion": 0,
+  "screens": {
+    "shop:main": { "file": "shop/main.json", "sha256": "<hex>" }
+  }
+}
+```
+
+**Why:** With a limit of 32, the contract structure itself exceeds it: each component level adds two JSON levels (the
+node object and its `children` array), so a tree at the component limit of 32 reaches about 66. The JSON depth limit
+exists to protect the parser from stack exhaustion; domain nesting is limited by `MAX_DEPTH` (32 components) and
+`MAX_PAYLOAD_DEPTH` (8).
+
+**Impact:** `Limits.MAX_JSON_DEPTH` changes to 128 in both `rain-protocol` and `@rain-ui/core`. The manifest carries
+its own `schemaVersion` so the format can change without guessing.

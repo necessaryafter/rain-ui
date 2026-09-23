@@ -229,8 +229,8 @@ para os dois lados.
     - contrato: 256 KiB serializado, 2000 nós, profundidade 32, 256 ações, strings de até 1024 caracteres;
     - propriedades por envio: 256 KiB, listas de até 1000 elementos;
     - payload de interação: 8 KiB e profundidade 8;
-    - profundidade máxima de qualquer JSON: 32, checada no parser streaming com contador próprio (não depender do limite
-      de aninhamento da versão do Gson).
+    - profundidade máxima de qualquer JSON: 128, checada no parser streaming com contador próprio (não depender do
+      limite de aninhamento da biblioteca de JSON). Ver `docs/decisions.md` §3.
 - Erros têm um código estável (`UNKNOWN_COMPONENT`, `UNDECLARED_BINDING`, `LIMIT_EXCEEDED`, ...) e o caminho do nó (
   `root.children[2].props.value`). Os testes checam o código, nunca o texto da mensagem.
 
