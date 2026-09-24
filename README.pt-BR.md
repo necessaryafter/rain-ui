@@ -516,6 +516,9 @@ Se o projeto te interessa, acompanhe o repositório e experimente.
 
 # Contribuindo
 
+> **No momento não estamos aceitando contribuições.** Elas serão abertas depois que a primeira versão do Rain UI
+> for lançada.
+
 Rain UI ainda está cedo o bastante para que feedback de arquitetura seja especialmente valioso.
 
 Antes de fazer mudanças grandes, vale ler:

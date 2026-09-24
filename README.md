@@ -503,6 +503,8 @@ If you are interested in the project, following the repository and experimenting
 
 # Contributing
 
+> **We are not accepting contributions at the moment.** Contributions will open after the first version of Rain UI is released.
+
 Rain UI is still early enough that architectural feedback can be particularly valuable.
 
 Before making substantial changes, consider reading:
