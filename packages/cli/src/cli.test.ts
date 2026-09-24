@@ -3,6 +3,7 @@ import * as crypto from "crypto";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import * as zlib from "zlib";
 
 import { validateContract } from "@rain-ui/core";
 
@@ -235,4 +236,164 @@ describe("rain build examples", () => {
       }
     });
   }
+});
+
+function assetFile(out: string, hash: string): string {
+  return path.join(out, "assets", hash);
+}
+
+function readContract(out: string, file: string): any {
+  return JSON.parse(fs.readFileSync(path.join(out, file), "utf-8"));
+}
+
+function pngChunk(type: string, data: Buffer): Buffer {
+  const length = Buffer.alloc(4);
+  const crc = Buffer.alloc(4);
+  const body = Buffer.concat([Buffer.from(type, "ascii"), data]);
+
+  length.writeUInt32BE(data.length);
+  crc.writeUInt32BE(zlib.crc32(body));
+
+  return Buffer.concat([length, body, crc]);
+}
+
+// A valid 1x1 PNG padded with a tEXt chunk, so the file is over the limit while its header is fine.
+function oversizedPng(bytes: number): Buffer {
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(1, 0);
+  header.writeUInt32BE(1, 4);
+  header.writeUInt8(8, 8);
+  header.writeUInt8(6, 9);
+
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    pngChunk("IHDR", header),
+    pngChunk("tEXt", Buffer.concat([Buffer.from("Comment\0", "latin1"), Buffer.alloc(bytes, "x")])),
+    pngChunk("IDAT", zlib.deflateSync(Buffer.from([0, 0, 0, 0, 0]))),
+    pngChunk("IEND", Buffer.alloc(0)),
+  ]);
+}
+
+describe("rain build assets", () => {
+  const basicDir = fixture("assets-basic");
+  const banner = fs.readFileSync(path.join(basicDir, "images/banner.png"));
+  const spinner = fs.readFileSync(path.join(basicDir, "images/spinner.gif"));
+  const title = fs.readFileSync(path.join(basicDir, "fonts/title.ttf"));
+
+  it("copies each imported asset to dist/assets/<sha256> with the original bytes and lists it in the manifest", () => {
+    const { out, result } = build(basicDir);
+
+    expect(result.status).toBe(0);
+
+    const hashes = [banner, spinner, title].map(sha256);
+    for (const [index, bytes] of [banner, spinner, title].entries()) {
+      expect(fs.readFileSync(assetFile(out, hashes[index])).equals(bytes)).toBe(true);
+    }
+
+    expect(fs.readdirSync(path.join(out, "assets")).sort()).toEqual([...hashes].sort());
+    expect(readManifest(out).assets).toEqual([...hashes].sort());
+  });
+
+  it("writes the asset table and the $asset references into the contract", () => {
+    const { out, result } = build(basicDir);
+
+    expect(result.status).toBe(0);
+
+    const file = readManifest(out).screens["test:assets"].file;
+    const contract = readContract(out, file);
+    expect(contract.assets[sha256(banner)]).toEqual({ type: "image/png", bytes: banner.length, width: 32, height: 16 });
+    expect(contract.assets[sha256(title)]).toEqual({ type: "font/ttf", bytes: title.length });
+    expect(contract.root.children[0].props.src).toEqual({ $asset: sha256(banner) });
+    expect(contract.root.children[2].props.font).toEqual({ $asset: sha256(title) });
+
+    const text = fs.readFileSync(path.join(out, file), "utf-8");
+    const validation = validateContract(JSON.parse(text), { sourceBytes: Buffer.byteLength(text, "utf-8") });
+    expect(validation).toEqual({ ok: true });
+  });
+
+  it("records the frame count of an animated GIF", () => {
+    const { out, result } = build(basicDir);
+
+    expect(result.status).toBe(0);
+
+    const contract = readContract(out, readManifest(out).screens["test:assets"].file);
+    expect(contract.assets[sha256(spinner)]).toEqual({
+      type: "image/gif",
+      bytes: spinner.length,
+      width: 16,
+      height: 16,
+      frames: 4,
+    });
+  });
+
+  it("writes one asset for the same content used by two screens", () => {
+    const { out, result } = build(fixture("assets-shared"));
+
+    expect(result.status).toBe(0);
+
+    const hash = sha256(fs.readFileSync(path.join(fixture("assets-shared"), "banner.png")));
+    const manifest = readManifest(out);
+    expect(manifest.assets).toEqual([hash]);
+    expect(fs.readdirSync(path.join(out, "assets"))).toEqual([hash]);
+
+    for (const id of ["test:shared-a", "test:shared-b"]) {
+      expect(Object.keys(readContract(out, manifest.screens[id].file).assets)).toEqual([hash]);
+    }
+  });
+
+  it("fails with LIMIT_EXCEEDED and the file path when an image is wider than 4096 px", () => {
+    const { result } = build(fixture("assets-too-wide"));
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("LIMIT_EXCEEDED");
+    expect(result.stderr).toContain(path.join("images", "wide.png"));
+  });
+
+  it("fails with UNSUPPORTED_ASSET and the file path when an asset is corrupted", () => {
+    const { result } = build(fixture("assets-corrupt"));
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("UNSUPPORTED_ASSET");
+    expect(result.stderr).toContain(path.join("images", "broken.png"));
+  });
+
+  it("fails with UNSUPPORTED_ASSET and the file path for an unsupported extension", () => {
+    const { result } = build(fixture("assets-unsupported"));
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("UNSUPPORTED_ASSET");
+    expect(result.stderr).toContain(path.join("images", "photo.webp"));
+  });
+
+  it("fails with LIMIT_EXCEEDED and the file path when an asset is over 8 MiB", () => {
+    const dir = tempDir();
+    const screen = `import { defineActions, defineProperties, defineScreen } from "@rain-ui/core";
+
+import huge from "./huge.png";
+
+export default defineScreen({
+  id: "test:huge",
+  properties: defineProperties({}),
+  actions: defineActions({}),
+  render: () => <image src={huge} />,
+});
+`;
+
+    // The screen lives outside the repository, so @rain-ui/core is reached through a link to the root node_modules.
+    fs.symlinkSync(path.join(projectRoot, "node_modules"), path.join(dir, "node_modules"), "dir");
+    fs.writeFileSync(path.join(dir, "screen.tsx"), screen);
+    fs.writeFileSync(path.join(dir, "huge.png"), oversizedPng(8 * 1024 * 1024));
+
+    try {
+      expect(fs.statSync(path.join(dir, "huge.png")).size).toBeGreaterThan(8 * 1024 * 1024);
+
+      const { result } = build(dir);
+
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain("LIMIT_EXCEEDED");
+      expect(result.stderr).toContain("huge.png");
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });

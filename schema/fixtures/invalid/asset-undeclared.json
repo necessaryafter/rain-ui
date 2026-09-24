@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 0,
+  "id": "test:asset-undeclared",
+  "properties": {},
+  "actions": {},
+  "assets": {
+    "753bb33916b8811bda99275591b33c73a14ccba8ca0864ae2d1b0c244215e445": {
+      "type": "image/png",
+      "bytes": 48213,
+      "width": 128,
+      "height": 64
+    }
+  },
+  "root": {
+    "type": "image",
+    "props": {
+      "src": {
+        "$asset": "b2ee0ef0cf4fd36e0d0426ec06dbe1db77735997c628f1aafd6eb4c14b0b567a"
+      }
+    },
+    "children": []
+  }
+}

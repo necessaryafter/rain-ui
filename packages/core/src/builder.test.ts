@@ -53,6 +53,20 @@ describe("t builder", () => {
   });
 });
 
+describe("t.asset", () => {
+  it("serializes as the asset kind", () => {
+    expect(serialized(t.asset())).toEqual({ kind: "asset" });
+  });
+
+  it("can be optional", () => {
+    expect(serialized(t.asset().optional())).toEqual({ kind: "asset", optional: true });
+  });
+
+  it("does not offer .default()", () => {
+    expect("default" in t.asset()).toBe(false);
+  });
+});
+
 // Checked by the type checker, not at runtime: a default must have the type of its schema.
 function typeChecks() {
   // @ts-expect-error a string schema does not accept a number default

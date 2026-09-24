@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 0,
+  "id": "test:assets-static",
+  "properties": {},
+  "actions": {},
+  "assets": {
+    "753bb33916b8811bda99275591b33c73a14ccba8ca0864ae2d1b0c244215e445": {
+      "type": "image/png",
+      "bytes": 48213,
+      "width": 128,
+      "height": 64
+    },
+    "9929fe092d669a4e02548f36af1bda7e2ccb732e243ba7642af9e63fb4c03fa3": {
+      "type": "image/jpeg",
+      "bytes": 30720,
+      "width": 64,
+      "height": 64
+    },
+    "8af2727e24ae8c2c43010e00221bce6c38bc1a5e9afef2e494eee7d406a25b1d": {
+      "type": "image/gif",
+      "bytes": 90112,
+      "width": 32,
+      "height": 32,
+      "frames": 12
+    },
+    "b018f9cd545321796bbd320c3b844defd9a2e1b22d1859c1931b1f9016e92c8f": {
+      "type": "font/ttf",
+      "bytes": 21504
+    },
+    "5363a3158eccac95f115810ce02d5da42de443c5f6cf79a6a4a9ac06b5a13180": {
+      "type": "font/otf",
+      "bytes": 18432
+    }
+  },
+  "root": {
+    "type": "column",
+    "props": {
+      "gap": 4
+    },
+    "children": [
+      {
+        "type": "image",
+        "props": {
+          "src": {
+            "$asset": "753bb33916b8811bda99275591b33c73a14ccba8ca0864ae2d1b0c244215e445"
+          }
+        },
+        "children": []
+      },
+      {
+        "type": "image",
+        "props": {
+          "src": {
+            "$asset": "9929fe092d669a4e02548f36af1bda7e2ccb732e243ba7642af9e63fb4c03fa3"
+          },
+          "width": 32,
+          "height": 32
+        },
+        "children": []
+      },
+      {
+        "type": "image",
+        "props": {
+          "src": {
+            "$asset": "8af2727e24ae8c2c43010e00221bce6c38bc1a5e9afef2e494eee7d406a25b1d"
+          },
+          "width": "fit",
+          "height": "fit"
+        },
+        "children": []
+      },
+      {
+        "type": "text",
+        "props": {
+          "value": "GTS",
+          "font": {
+            "$asset": "b018f9cd545321796bbd320c3b844defd9a2e1b22d1859c1931b1f9016e92c8f"
+          }
+        },
+        "children": []
+      },
+      {
+        "type": "text",
+        "props": {
+          "value": "Pokémon à venda",
+          "font": {
+            "$asset": "5363a3158eccac95f115810ce02d5da42de443c5f6cf79a6a4a9ac06b5a13180"
+          }
+        },
+        "children": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 0,
+  "id": "test:assets-named",
+  "properties": {
+    "icon": {
+      "kind": "asset"
+    },
+    "badge": {
+      "kind": "asset",
+      "optional": true
+    }
+  },
+  "actions": {},
+  "assets": {
+    "b2ee0ef0cf4fd36e0d0426ec06dbe1db77735997c628f1aafd6eb4c14b0b567a": {
+      "type": "image/png",
+      "bytes": 512,
+      "width": 16,
+      "height": 16
+    },
+    "45aa5aaf8919cea71c3bece11873ad646e3e6746bdaab1f690916dc30253aecc": {
+      "type": "image/png",
+      "bytes": 498,
+      "width": 16,
+      "height": 16
+    },
+    "277e41e68339d3a69de6f628510143a7e4290b159762d0d782c59cd2cea4b39d": {
+      "type": "image/png",
+      "bytes": 505,
+      "width": 16,
+      "height": 16
+    }
+  },
+  "assetNames": {
+    "fire": "b2ee0ef0cf4fd36e0d0426ec06dbe1db77735997c628f1aafd6eb4c14b0b567a",
+    "water": "45aa5aaf8919cea71c3bece11873ad646e3e6746bdaab1f690916dc30253aecc",
+    "grass": "277e41e68339d3a69de6f628510143a7e4290b159762d0d782c59cd2cea4b39d"
+  },
+  "root": {
+    "type": "column",
+    "props": {
+      "gap": 4
+    },
+    "children": [
+      {
+        "type": "image",
+        "props": {
+          "src": {
+            "$bind": "icon"
+          },
+          "width": 16,
+          "height": 16
+        },
+        "children": []
+      },
+      {
+        "type": "image",
+        "props": {
+          "src": {
+            "$bind": "badge"
+          }
+        },
+        "children": []
+      }
+    ]
+  }
+}

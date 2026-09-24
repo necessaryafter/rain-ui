@@ -1,0 +1,1557 @@
+{
+  "schemaVersion": 0,
+  "id": "test:asset-total-exceeded",
+  "properties": {},
+  "actions": {},
+  "assets": {
+    "3ac718522717487ad4593401e2c9fa5559d3180c31cc896bc42a6c1eec6324fe": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "8c555221d3db0f33ac65165990545bbf53a447c58d0179b6dfa8729e52fffe54": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "831bb904d98d118e62d2ea59b1850bec9ff03196301285dc4212cb43f65c08a7": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "ec5a50f8722d1d1d104a7db4e2202dc2144a5ad2113ad6baddd7ace7af3e038d": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "989c6d3866b9729e9319610a2e58e0f14a198b8bf6ee6d8947dc8f089765c435": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "875fa64a6877f60425d34bb8d7889811bf1399fb7e7647db4971669d39e4d85c": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "f23eafdba8a6d3b35623208dc4ae9a9ce7eb12e489eeb266c212f718d1251345": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "4357e14a41eb76bf7922a592cdbfd24a1cafccbcfad5a0106fa0ec27e0b45051": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "fc1df448083f48d7e92621bff4ad1634f1ec4eb77a81f775d9546f55bd6cb985": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "80df830f02b0016b438aef38854e27586e1968bedab127fb192837dbd30adf73": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "f1872e710c0698f5fabd9e94dcb51ff1edb94891605892c87acaa4c10fa5154e": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "a0b70818e553839e492abfb3cfa4d82edd087f4bfcb549345686c3bc3520f4aa": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "a1b10942eef5d5fc098a1a4809984e172b4d51295c1011f5fde570ddca97fef2": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "8e6da810c22002934c5b1d340fd7612a2d04bad1bca0ab453b918c35ddb6cb0c": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "058b7cacd83f13f40c1826b7844539b5b1cf7000512587d943d04e863021da7c": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "668ec2695b9d59edafea854e7219b4ce1de6ce2ae86a1283120a929d5870a53b": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "ed48aa085addeff81d5bb4b936df34bf9d0b84b041958d73eb157d4827e5fbe2": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "d0dd9f5bc2f717659ba6fb6cad86b92ee99d1e533b6d85603b1463a619032006": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "172bbc70bedb361b420ae970b154b5bcc84f4140cc872188a768f4ec481ad320": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "e40b5742c4a8ae56fb6c739108931196bc9ee7048359be1f833cafeeadbc3669": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "58c6375c32dee106303dc8811cb31950b65c529fe8b562eed3469cd7fe773418": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "3eb38c5d08b69858e6996037e2b0ee70c86e93023661191a7587df379b39450c": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "3358aa6403c5ddc232ee06f9947b9af9fed5bc2220d9b64770e5d13681bc8716": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "0e1af185bd6406b38d0a78b42b51f3444ded49df34b140cd7c5a0d01d1c73191": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "2a9dbdd1be5935db54749f7509d403d339b21fd79cd5acb2f320968301b8cbcd": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "57e39a968671150083716d2b0e287227ad35fdadda569a570b9150fad9d24a3e": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "e0223d71d795ee8d92538ef24a45807197a0252ecaabf9c535e7136feb6f58ab": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "c5b8308f49895131acf929dbeee4773191301de1e44c47e908d261d35d26877f": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "81d20f419ead729d8cf202a883bd9964151b588871607a87c349cf7cccc9ea98": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "8365c740319c2bc3b98f280687fddc47b62f9196eadaf2f02a0278c77ec5d989": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "b769211a05d64b13eb0cf5688f9a53fa421993ccaafe47c6a87c7487bbf13989": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "d0e5442d45979b75269cac662d4f1e290f6b95e5bbe020df55435a4a9bd36660": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "1364cc8d0eab86432f7d750bb207e06efd6cbfa87d227eb81044234e070f09f2": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "9048cdc3516c53df77ea81e0da532d712cf4fd24e7897ece50bdb0988d3ed9bb": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "f29ecf16b80cce8f91a39183c7862cb3505f39a3ee2027a8f2cc75b6d88fe837": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "b38498f4dee6a6b769676cf339cbeba30084408637ad4ff9796807d950115fd6": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "bf1663315c58975b22bee6a424e00cdd3ab9afbae9352c163c8a067c2d70a8b5": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "3ea7af8dc0609a2c58576fecd4197b81827838c685c38b3b8a6236f506fb0344": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "ced8878bcc66db51c4f1bd1f819391b1b276da6a368cdcdd43d7600d1c9149b0": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "da97913acdd3bd991431e72950c65b8f1cd5fdf809e41d2eff0ffbd702ac0d67": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "abd663cc23b4622cace89aefc78763c39416a69b11dd6f1d5b6cd1d1d5767435": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "325d111ee64a95e99742966a0d792df4557fa119fc02c182be2c0f5d455fa5d9": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "84ad6403e6330172af33918a22f9f9d312d3977c3a2d0b3b5036364c1c0554d9": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "ab4da4502a5dea1909983ed0e75bfc9f007df247598ad86527ac985839116c7f": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "e4a2ac61aec7ba68820364981a27ba6901976b07599ceac10c3f622671d3541c": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "7a62f3a606f2fad7faa0abafb0bf2a63748fca0aaba5d22d4969092bfeb555ce": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "2d4a131a132b8d122674a997571f2e33057a08ee6a94913803f21a2f96802675": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "95fe2fcf5ef6b59d95bc1f3ae8f23361df7256910a97eb3a3aa053bba64de3c6": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "44ca756edc5b4b70db7574e107504e214cf232701c615411ef5fc56171d69d30": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "121a3ff3255aa4043f0cfedfb3232b8328ebe25489a71dfaa8f165d31cb5026d": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "5ed30289d5bae92baa8bf5662687c7f7e0b7e58cc1ae9d1192d36514084f212e": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "045c4600f9eb50e0203f98fd2e3241d1a27171e9b3443c145315d5b2a58987c8": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "3940d0063694529ee57ceb5acce1182b00e10c8ac4f6e43f7ec61f2347d502ea": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "d00b66d0e5d393bfd6429f64c4404c108a918c3050d0977121b13156978c814b": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "d378b27d5c8e039cba6c06eb2ef175a6aba4cb0f236256a6db8711053c07a4ac": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "f24ca12e48292b5de14feda2f70f89d985de0d7ea5353cebceaf728dd2e1a427": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "8e0111d2a7cef0f594b7a2987084b2a9481f7bfcf77e09af2ffe3feed6d68376": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "fa48fff0eed4cbfdf14bcea6a139abe2a37d590d2d76483122fba02d429d2dfb": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "3ad58a9f05178798f74482c8cdc244450b2673cc04799e31892b5f916e4a0b11": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "d742103b83579f99ccb8d20e20dc6ee93016bab53eb5ef047a9d44cd3c3c00cd": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "748e974753d2b1140ba910c818f75c5003160034178984c1d12d66dafcb22ceb": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "ea8508540186a4f8ea5c9fb9932bc4824fa3027953f0570c8750d71e12716954": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "a49b4301648eea0e12b618686238c3dedadc80a6eef3a273d81d9dd3d9a72279": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "c9121ade2cbf4b147d9205ac253adc8cf3d9eed8e319db65a99c70c3cae6c0bb": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "a42da3977f8156e58c701d596d8fd937c42babdd0ab44912bdce96022668f489": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "efd2509e4a87a00f3ac9486a3ecf6f5a769ea106be87d053f20309c67bd06c47": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "e10dac4d3bb2f9df30523ff55401f47bf14f8aca3924ebe62fbfb2b6b79ca3a3": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "40316adde654e2c17751f0b120bb90cab8c3dac1fb54b62bd6bb3069883fabbf": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "7f5448aa921c47a4360940515ef1b6fa167f1d32cb9bbefaef2b15e1a76eb0ce": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "353baac6601e89381afcb1e0dfa00366f0a197cca03fc90cd22b584938de3989": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "dd0fa57f7852aafbec34be7db65bb0d0263872f3d0575d95ed05cc040b266def": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "2b18ab0f2fd22b095b21c2a22b9230115d34482cc71a17f3a69605d2116d1407": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "550c81e2dc4e62a400b81f87f989ba4fbf005cfc225d5e8c18741f15f346fe1d": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "0bf6cf51d561c97653bffb65a982c13153fde0d621721e0075afc3044d2a4531": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "277b766deb06c6cc681b01c04080a482c7fcd854a524460c7f0a3995784ecae8": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "b3bbd5bc9f9bc8a2eeec2b3d28f069a01f3c373f9fe1e8d0871c56fb02b5d245": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "2728b305d4ec5889c41efaa9a2a08e2e615f8b0c07778f56514a080222e5ec2b": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "37f50ee315219b92cd81abe42635c9f5dd1c8dac3daf7f1e9592144539edaa46": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "119a3408616961a400c0a0b76a161c1ead5529b3cf6dc97ac58efc29a1d5a951": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "82db638964399e9e4034a0cec82950f19e6db891f1decc1213937ffc0ebceb94": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "d650839ec9deb9f9a7c6f0691c1da6e3692824e5d96e2d2fe2e63dbc8979b094": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "5870283fb476446817911621eb57c1a49538049870dec8d0d983f790da4eb776": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "8d48418e0e6b1b7af24ffe00a5d732a4c49160c757beb309ea1d2d22eb75d508": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "5d25ba2cb05bad7d6ab85ef0e86249d63a1fd13315b53623dec49cb852e19f05": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "7024f4d820e5a62bd65f9e5ace653bcdb68f6ae872ba5da3ae83c1ed55edea9c": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "da98d23930241b8be2a9d10d1536e5cc9b1dbbde4791f69a682c1012b0eb6bb5": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "043eb0ecac3da0657542eff4ab4c1e7e40be78603cb1c51843518762d2720429": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "93a8c674cede271a606c4d0c5dcd75f08cb805cbee55d2bd5036d21d20ea54f4": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "c39b732fd48139c140a2a7e783679ddb447f72777fe2652e0e24c5cd61130601": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "a3b68d198bc1df11da80f3a5dc29c38952dc7870333955b184999335c0656dd2": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "41442693eb86c6cfa50fa3195ca68d6a1fe2756b7ee4ead83d29f1bbe2fbedeb": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "f87cc35cd46adc352e8bd327e00f34fc9f55f793685ca5f65be002d2fcca32d5": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "0ff88f0db30c63d8b37921824faa66ab0e744d95fc0c69d73094bf5ec12c996a": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "cee052c2f5d00f867f4eecc60ba1cdba3ea63af1014b7e0d9c6eec33cf916860": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "be07e2a11f118d5a2c2541d018cc11128b6c69c881c14bbd8658e333c20685d3": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "eeb58dae5745ff856701e2f9cd70f776cacbd8a3875013fc966cef3fa2d4ba40": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "4ae26e9262dd6f5876f35726ea39155c95d7bd335dd293216130575c7354ea6d": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "d13c307eddeaf09ed22d72185994319df93b1975e73ab08b6e21cdd7683d2a19": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "7985e3223e24aac23eda39dd018a0ac4562bdb4ef7f6e738d9c8356745b97e4f": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "96c67da50791f5dc91db2c959430b3c81109c6ce1be7b4e5c7d9d8be2a4da33d": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "4a30af6cd839304eb6907e38ba80f4976ffdc5df72d9e4bd630bc6038f21ead5": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "5286d359be1446ab77de29d91b66e233ecfc9ae888ea9c5930d441f59e11e290": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "b66b26edcbbf1cae74e559fffe4b657ece42f8452e8a6e2b0adc73670a0b5143": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "a4cc4de2a69f5c25cff4b6f3254c777f494ef311b41e8b455f19c4c04dd5d545": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "20617c76b844ba6cce2f6bb709454a7bf2320aa12dad19249992b820bfa7a4db": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "81f6d110e6d7319acb833dff764c05276c5ded02a1ba6276f410ef7608a5d746": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "45fc6c647cb2867ae1eb1ebfb414b9444e04ec26d142e00880a65c4682edcc26": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "e2d88c3dd20806d46d358daf6a876b9c1c7f9e0a74fda51162accc097a5e55b8": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "1c20f84115d3e2e6718a682a366cc34b28400bd01b088164e69648aa06a0e2da": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "7978e573ec6a57dd46e7101469f24f359fb173e35b28a60b63d7e52065ac0e94": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "4f52637a7e6c2ba36d33b80d7e67f93b3dd0492be8a5df3e8c92a14551f9975f": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "afa2388aa41b0da8188b7080d569d653abdd67ca989402319adb7f9526b1f137": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "821200db01e6065f22adbba6f2df34b1045a0167b98e105f5355a1d05a86a510": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "c85dd0d67a1948329fad6ad75d8539fcc02eb4d93c648d2cdccad2e7cbf4ec4f": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "1351b9d1bdf04bcc1744c8c99fbf0d39c97a1738eb636576cfb680ece2558333": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "a6dea6eb7fbd6f8b2826ba04dbae654eb085702364012174800d67ace1aa7bae": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "7edce871d0a3f4b2fd14906358b93efc123b8d7d41cf2d23628cc7e8ef6e902d": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "729406d1cab76d160c27df406aa0c69d459651501d5d5f911df5873b1613e7ad": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "ea33b884345016d1c5397fcc781bf3a730310d9944d918c3c83a143fd7d176dc": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "ab569b56fca788b27caf1826f1aa5756264feffb869f0de86c1ceb56d309f913": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "b51cc5dfb9f875bfac6a9986328333f27df410ffadfb74b76f680ac9b811abf7": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "0734470992f60baf36a08a874e325219b7d603f6a20e7554f518279ce9e844c7": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "be4825ba76577a49704030a15a165bd7deef624ebf2a9fd5af9e4b5abf42a168": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "d6011cd818f4b39c69d363c1e1506ea0f53dc743fc940feabd8ed8110dfb09d6": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "97941904fd059bd24716f04e0a218e1d756ff25b6bba67881afbc302510cd95a": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "cadcf9fa9548f592dbb8cd0e021e1f1501dc897fd31214ceefee91034a6aa667": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "993bd6ec6b64301f2af46c1cca5801864fcc69e96bc545597991c8a79edc2719": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "77c7294a5bd1e9624b4d2e89006968d8def951c10371ba8243f3c6af526300ba": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "754b6b02e0d67389a9cc1c351f110dec5956f1244e418a77ccfcbdf2e19256e5": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "7ec38ce6fb6e950791ec23a645fd5770372a81dfb743d17aa127a824f5b69402": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "439aad446706885f69a5326212606c879f2079a9464f3aa4629b23ce60304db4": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "f735ddb23c4b6ac7ba3dad7040f099ff0e8b94f1daca9ffc4e32999eeec41f74": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "8754ec6a2ee55776631ae08d901da177c3a56c2b05b19bd4e11420ac769bde7e": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "5836e3844078fefb4b0b881027f285e42fc4699ae4ccb35a6a15d9e56ad192d4": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "eac606ebc47218b64f8bccbc8af4792e2792fe652e6e950ebde7dda76f20da7e": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "391ed79bfa835f46ff99767491613c8f2533c4306fcade70c9af1d87558d9c69": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "aaa005110b7fc9d1256932b64d15e53e22a29d1cf3eaf00e736f94604d899761": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "66e84cea8b2f8cea4a80fc1cded29c58c4d9bcbb0b2fa8b6aa1d4866e4f7e5bb": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "0c924776a3006b03137ca46e373ea8852074d3b6353d79eff0d105100974b9fe": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "0c3b6773cfa7bb1659f95059da2bb36680695e3ce4e7f39dd0db267522da0c0d": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "384fcf9c71f9cd011bcf9074f8af5c49467650c18fec8e42213155cb10c6690d": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "a124429edca9eb880c8f9891432fdac22b0229763253750533fcf969107c2745": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "ec0ef10db533a91ba839345e06607623b30b0ce8a9ac26eea0639cfb21fccc24": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "28fe6f36a4f0af161de6c2a80d608d27539fcfaca351a54527f3101a93079f8d": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "7c9ff808c594e7b9ce49d73a728ccdf7f1bb9183a8b77a0c2f56a36aaa483a77": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "d16ae7f39b3cc77a46c6afbdf92cac962bc975bfef0787b6923059db7ab9717f": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "fa65c0e89fbfd4889fc151aef8851b01790a0415803fde408cdb85b161a321e4": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "adad3cb3d366be3f71e2e214c6827486d05da037216038fcc012088831af912e": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "20820557cd3dbe0d5716bc35e547abb52e49111ec0331200278135f9bcfa16fd": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "24820b4655d4b83b336179dbbd30f6a651bb5131f00115215983584575edff0c": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "1622ff6d296f19e185dd984391296cd665bd3a87a0787a4614dcfea97e8f477f": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "5d823ddef70453e78800625fa9935540b49f419b2f4beec17a0b1a36eab24ad0": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "bfaa92bbbe58f8443ae8642ee8195cd51f2761ecf607964dbeb9dcd9a319758f": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "2df3f9c689134389f649bef9dd52ec0814a5b9af516e30980128400c71c1a877": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "2f7422915d6291c20a5ee525abe3afb70141d66571615dab98eaba9142e2a277": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "46e2d43fee557fc21b21c6fa7060fcbc2b2395a29be5d51851fe528654501822": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "771a28e5bf0fa567ad384685661f29faa8a991276f05d33d0643997bd66df509": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "bf22ab52df31cd0c66e22f39813f0da9847b39a7ee1a49b8bbf93406c93f6260": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "368cbfb71153a2f2a561747a398f7f452f3a0e88770af93dcf9be7243b9dd498": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "02dd38beb01f4fe0ceb564df8f69ad60069384b4e21c9ce5ddd092be8d3bb10b": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "f2f18c8df25f79fb1b9aede60d947fd448954bb5aee3578db70f9f2dc7e2b6b1": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "57652395fceb056791c8a9bf5c83023e1d7266e576be2a2206bbcb900987f80b": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "33a388bbc8b7b05a4c0909337fb5a3ed1d1cefb1bcf52ab9538bb5b639a720c8": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "2e4d2d8f46e2f3fce8360da7485f82586ffdec76926727fc271258e158ff6fd0": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "ca19f8bf9319d8e508ae968274965b7e119dbd7497ab5378f04af07c1cc33aa7": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "9e20b7cdd4aae1ca13521746b4a3c3d23e6e3652f3cbbf3d6ae429c617db160d": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "0b5cc65d86b730ccda48b24ae4ca20a6e54ace7fef3fe004028892b22047b692": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "0fab0faa789df6d1fb4aeddab4b2d711b3e910251aa80806cc4f14a18bd8c638": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "a5aacdac1d1d17e42a3125635b8a93b57b3277dfbcd55d616dbfb1c318fb0d8e": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "d711ae3a45966332d29bf4b9b57671c79b437117d97237436f104c526d8f00b5": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "0688db661c5f64dff447213168285a3e579d790b66af69b17df3619ef09c8a63": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "a716e48dffb4e3597e9f67d05a390f984ff801d04b7ab30ac5f68cc6c225956b": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "dcf13bd6fba263bfa527b05faacff1e29112a2ccb30ab1741d278cbd3480b64d": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "b81f0bcf97ca3b19c6b6abb8cb0c127e04ae24bb8d26b5eed764eb06f7c5025d": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "2bbcbcafa1e961f2fc3b2aef28edc331ffc510c558c947428a3b0270e94432d9": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "dee0801c92424f539ca876fca8a4303395a9ff6cf1a16318dca3846e18b37e02": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "e0b5a1f60a303488b4711c4273fbe8280624b4ef5353731008869f34ebb249d6": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "aa4090150663e9a2de044d7c3df9ddba50863a97033b746b358522b4df1a2d3d": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "f79b888cc73be52051cd5344d6110c6e9967dd2b7f752b8f997f9250300c1001": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "168db53fbf617dedfb213af5a04b42af499df85951c966a6900e94bc49284f51": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "3aa4c20adf3c67399400586b32f8e3e29173302017ac5f18810924e7db167b75": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "b29ef040030a9f5b30395563f70bd99636ded1ed6d7e04f8ac07b6732b348e72": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "4022300372f655d59bf05484eb21d3859f4b1815b3ee93f7aec1bd4c43a1a190": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "ebce188f62033331423723657c08e5678e46f35fec0fb9ab5290ad11ee8c83e2": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "09c266d13b57b8e6338a28cc25c63a5c5a22757c445d0782bc5e7b012fb8f29e": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "35b8f9836fe008e4b659ef8fee830fc1561ef9d4ccedeafaf0a51c6d4835eb9e": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "174db2b8f417916b90c35706462d41d07f364ef12af1f1e571e99bd367ade89f": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "f71bc4ea4d4796affd24a3b28b562469c1eae04e7392c4bfe31a750230f855a8": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "3181a38071c33ee7ea2d2a04e826eee4f6dc37187bf70dd3d5aed6a31de76da7": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "7b7810b482d6362927c5e55709d502810341a7a3e3472f6fae968c6d7a5822d2": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "9cb173b50ef7d67c83491d978d274a9db3f348efb748d91be11390b233dd9b21": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "5c24ae067156667b776042ca953aef2672eb94e3f14261a03bf641f7a1bc9518": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "eaf6a6abc59e98fe77770b2a1f13b901fa7c44d7ab998b9192c8ac3e669a61ef": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "a6208bbf85e3789f229ce1efaff59202b36f22cb2739345a4def17b704fe282f": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "6bd082422aabfff49f9298894bdb034b51dce4587bca211c0d48dfaba4b167bd": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "86fa00b527704289e4f0da2f36e6f3701dd653b32624567049e3548c8288a084": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "47c7b8173804510bb5e311211b91afd6b0fc4cebe91190a4c3128482e21b338b": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "24d7cd2777e1dfeaff7d45d148ca5209f8fec57c950c186fc3aa31920bf91e71": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "90f229a646328088b1175f2a780569d788a886afc48ab4a9150e87ce80b04c65": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "c5ff15aa2d62f5528a7400db3f1dc23f1cbc72bd32bbfc6791028ac9ca3c962d": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "b11adfb007b74277dc13b2f962641f0bea4bc8b14350922d2fb00b2d64b8ca08": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "addf5e142e563ff02a95981f3f0ded16898bc467278ffe65cec17b7a04bd1a33": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "91dbf12b24959d8280dbd992db68b53bc27161acc59479ba2c109aaa321a233a": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "4653d2f151e5571812315e3eba54d6f56cf23852e37fa00dc180f0f2f5d0ab50": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "1356757fe32abfbc793463c88d835fd367cb336a34492d4171ee40542d90e7ba": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "de5f1c58492945195a59ffd49c65b25aa51364302a707027bfe91c9a131b0067": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "015d8dba666aa311b06159fd1c1f937bd7d70adcc6c1508e13cf5963b033959b": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "fe9ac2aff85deb76f0539fc094cf20f80bb89e74079861822eb3faaca1550a36": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "72baf403a0ef864e0e4f77b50165142a34036c7e961ccceb4736bba787c905a1": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "3d3ecc7172206a2b199b10a80eb0aea379d0d8eac0a2de903b02ca0585e274bc": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "fea0809ee21219c8091265bf529b2f5511f11e223ba058c0a47cb53dedd16a78": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "84b20c2b0fd9d08d847c823f0a4a3ddb3d1b2b7f3f81fc7285d01b5b34c3b556": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "8381dd6042c8fbb6f2e2bc0cd3311df6730031838e727f68b00cf8748a79d5d5": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "e13c314eb306e565a643e409f9ce726144116f799780f0ff45dc6de9bcffb85e": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "ca7adf22eb6c5bc3d1f32a348c3b2ce7f2dad55ece650ee125906e2e6ae4cbc8": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "be6a93f9ddd4d159c4bdddbfa645d342873e1c0b509fd991b040d51a0e2e891b": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "05fc45498aed7a56a51643d3a0d7fe9d0a801174d90c0d4bfbf84b156b9f9ad8": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "17398caaa71b3926fc3de482f3154462cf0391e9ab0547fc1380d4f1f39365eb": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "d1124427efd374013090337939a6e90a39b5c02b241b91485d197276f7029933": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "4c746f81dd2c6b0b79b735eb0e05572dbee63c19f12a54c6e9fc5b76f89762f7": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "2ae195d540101f1acec49aa1a78ff42be61f7c1f146e93cdf162a2c517949b5d": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "603275c1fccf323bdf44a10f7f5c4bd89dd89f6c28b187094f344df0059b4a0d": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "cc061c60258a47817810980c0509d436b3aca5938004cfe8cc44b98dde3af499": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "aa6d4c732681c7b3a7ea3c1a57fe825eb140460c98a12bd3fd591cac7d814ba5": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "fc00d76c1083e4c0f58822037ea72576f1a6cc15bf6d8d44ce97facf578140b8": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "568d337ed523fc4db3699c197b6650f518e32a23be34639f75963f0ff5a775df": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "90e3da20f9bc42a614430d1def5a6ac31bcbc26a9f2865fd781ef615560c7559": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "a701a831214ab475791205f47e0474730a44a52314c51d9b90f169c652ac1c8f": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "c7d6ffb7ef4f6a9b8841e7a1e8732f465732d6b732342acd572a690ef815493b": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "757ef3fa1d93102604c180ebb0f85bdb2e6ccc4efd7925e086568f439eb522ec": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "d5bde9b48e29630ac06a45ef805ea45b8008c58e18433e9bce3fb313de568d5b": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "355e947671f90895c301046a9592c018eab6d50cedcf1cbf9af90b28ba58f14e": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "4daa9aeb2372e0e6e6195df59c03c0ece47ec386212281950de4171c78f61e09": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "aa734fd9f7b89ba29cb69e9e200cb2e875604d761bfd1a8ab769ff1233d14aa2": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "ba0448d3210da293ff09eddef26ecaa5812a407727c15c6d661cd9f97b95bcdd": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "ffb28203a1e05e47973796fa9e1c9ec59eafe53c038de61738b4523747ec0b93": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "355e80e36e6fe924fa4428a54c38ec38a6dbed80dbd75739a3d4a2d01dc5d680": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "ab0181e661766f6b9731e4c3f72b04f89e88e443cf38902811a6ec6586f7eaed": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "c261967dd07421caae27cfbddec8f945332c9b55dffe1992699425d3569a9dc6": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "483ccbe907c098f1a009e8e118a5ffaa17a8e33215299d98261a9603d2a94a51": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "9c8ef7a8dd0c5e849180eea4682991a6e356b786494e9948d304b1ea6e3fd17b": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "c2b6bec1a702f9002d82d3fd5476aece92161582bbebe7eebf59abc89efc9693": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "553e1d67c02f1272d4092f227737182795ed992870d0c1f9df983c6e95ea0d50": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "1ba2fdd0cd00e0b26f96d43ca259a19bbac4d8536dfeb69773a40567f06a0c3f": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "d9f18c963b64b8bde36f03f60f157ade973223c1cdc40cd695a593e576d93a7f": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "42758f2e3360f5b24e7352ec709158d6a57b1a320048dbc706fa907e1d93ffc8": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "7770e17e4cc608a6d749dff82c10e8b5b457e1292fe677efe29135ed8331cb5e": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "c1f09b0e0ecbc74dd69aa68512357c9049f6a09065abcdd8ca54f4556582bad9": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "0b22462fe0369cc84cb8f8290f710b082d6d037972779aa6beef2fbfdd0446ab": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "5b8d2c1a626e4e50ad0ce1ff0d663819ec2eac48ca05185fdca93b759e532081": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "4973bc96998eabf6c419d8215970e44d89e2d7423284f86438f63884e83be72f": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "356b8c6cadd6ff037705569549188d0c9130f598c52d34e860c6ad9207401a91": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "fa1f97a0be4963613d0ced5c570d725fe61a09a7ae2a3774bd45eac908c274c2": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "b32b567e35b0fe375e9710144c5ae571c92433fb37b07c9700f53bb043f0378e": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "a36f1906057b397e3cde8f9a0eadf71f7ce267d70db6ae211be3cb9ba5657f0c": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "aaf6a286f3f06a76b9404ff0c11f35d508925cde4236a7478106a4252b3559c5": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    },
+    "5241704c370bf590f7cff1a4074d10f79f3469bd26373a6e6b1ca8c2ca736c14": {
+      "type": "image/png",
+      "bytes": 1024,
+      "width": 16,
+      "height": 16
+    }
+  },
+  "root": {
+    "type": "text",
+    "props": {
+      "value": "257 assets"
+    },
+    "children": []
+  }
+}

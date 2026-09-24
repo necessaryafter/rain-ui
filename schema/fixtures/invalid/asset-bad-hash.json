@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 0,
+  "id": "test:asset-bad-hash",
+  "properties": {},
+  "actions": {},
+  "assets": {
+    "753BB33916B8811BDA99275591B33C73A14CCBA8CA0864AE2D1B0C244215E445": {
+      "type": "image/png",
+      "bytes": 48213,
+      "width": 128,
+      "height": 64
+    }
+  },
+  "root": {
+    "type": "text",
+    "props": {
+      "value": "Hash"
+    },
+    "children": []
+  }
+}
