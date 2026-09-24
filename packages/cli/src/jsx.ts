@@ -1,3 +1,5 @@
+import { readAsset } from "./assets";
+
 const JSX_FACTORY = "__rain_h";
 const JSX_FRAGMENT = "__rain_Fragment";
 
@@ -23,13 +25,22 @@ const transpiler = new Bun.Transpiler({
   },
 });
 
+// Any local import whose extension is not code or JSON is an asset; unsupported formats fail there with
+// UNSUPPORTED_ASSET instead of Bun loading them as a file path. Dependencies in node_modules are left alone.
+const ASSET_FILTER = /^(?!.*[\\/]node_modules[\\/]).*\.(?![cm]?[jt]sx?$|json$)[^./\\]+$/;
+
 // Registered by the CLI itself so screens build the same way whatever tsconfig is next to the caller's cwd.
-export function registerJsxPlugin(): void {
+export function registerScreenLoaders(): void {
   Bun.plugin({
     name: "rain-jsx",
     setup(build) {
       build.onLoad({ filter: /\.(tsx|jsx)$/ }, async ({ path }) => ({
         contents: PRELUDE + transpiler.transformSync(await Bun.file(path).text()),
+        loader: "js",
+      }));
+
+      build.onLoad({ filter: ASSET_FILTER }, ({ path }) => ({
+        contents: `export default ${JSON.stringify(readAsset(path))};`,
         loader: "js",
       }));
     },

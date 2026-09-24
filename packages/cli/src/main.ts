@@ -6,7 +6,7 @@ import { findUnusedProperties } from "@rain-ui/core";
 
 import { buildScreens, writeOutput, type Manifest } from "./build";
 import { findNondeterministicCalls } from "./determinism";
-import { registerJsxPlugin } from "./jsx";
+import { registerScreenLoaders } from "./jsx";
 
 const USAGE = "usage: rain build <dir> [--out <dir>] [--check]";
 const CLI_ENTRY = path.join(import.meta.dir, "../index.ts");
@@ -72,7 +72,7 @@ async function build({ dir, out }: BuildOptions): Promise<number> {
     return 1;
   }
 
-  registerJsxPlugin();
+  registerScreenLoaders();
 
   const { screens, errors } = await buildScreens(dir);
 

@@ -3,6 +3,8 @@ import * as path from "path";
 
 import { compileScreen, isScreenDefinition, validateContract, type CompiledScreen } from "@rain-ui/core";
 
+import { assetFiles } from "./assets";
+
 const MODULE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx"]);
 
 export interface BuiltScreen {
@@ -18,6 +20,7 @@ export interface BuildResult {
 export interface Manifest {
   schemaVersion: 0;
   screens: Record<string, { file: string; sha256: string }>;
+  assets?: string[];
 }
 
 export async function buildScreens(dir: string): Promise<BuildResult> {
@@ -42,6 +45,15 @@ export function writeOutput(out: string, screens: BuiltScreen[]): void {
     fs.writeFileSync(file, compiled.json);
   }
 
+  const hashes = assetHashes(screens);
+  if (hashes.length > 0) {
+    fs.mkdirSync(path.join(out, "assets"), { recursive: true });
+  }
+
+  for (const hash of hashes) {
+    fs.copyFileSync(assetFiles.get(hash)!, path.join(out, "assets", hash));
+  }
+
   fs.writeFileSync(path.join(out, "manifest.json"), JSON.stringify(createManifest(screens), null, 2) + "\n");
 }
 
@@ -59,7 +71,25 @@ export function createManifest(screens: BuiltScreen[]): Manifest {
     };
   }
 
+  // Absent rather than empty, so builds without assets keep the manifest shape they had before assets existed.
+  const hashes = assetHashes(screens);
+  if (hashes.length > 0) {
+    manifest.assets = hashes;
+  }
+
   return manifest;
+}
+
+// Every asset the screens use, once per hash even when several screens or files share the same content.
+function assetHashes(screens: BuiltScreen[]): string[] {
+  const hashes = new Set<string>();
+  for (const { compiled } of screens) {
+    for (const hash of Object.keys(compiled.contract.assets ?? {})) {
+      hashes.add(hash);
+    }
+  }
+
+  return [...hashes].sort();
 }
 
 // A valid id only has [a-z0-9_/-] after the colon, so the path can never climb out of the output directory.
@@ -95,6 +125,13 @@ async function buildModule(source: string, label: string, errors: string[]): Pro
   });
   if (!validation.ok) {
     errors.push(`${label}: ${compiled.id}: ${validation.error.code} at ${validation.error.path}`);
+    return undefined;
+  }
+
+  // An AssetRef written by hand instead of imported has no file behind it to publish.
+  const missing = Object.keys(compiled.contract.assets ?? {}).filter((hash) => !assetFiles.has(hash));
+  if (missing.length > 0) {
+    errors.push(`${label}: ${compiled.id}: UNDECLARED_ASSET: ${missing.join(", ")} was not imported from a file`);
     return undefined;
   }
 
