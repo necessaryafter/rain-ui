@@ -82,7 +82,58 @@ public final class ContractParser {
         }
         final var rootComponent = parseComponentNode(rootComponentNode, "root");
 
-        return new Contract(schemaVersion, id, properties, actions, rootComponent, contentBytes.length);
+        final var assets = parseAssets(root.get("assets"));
+        final var assetNames = parseAssetNames(root.get("assetNames"));
+
+        return new Contract(schemaVersion, id, properties, actions, rootComponent, assets, assetNames, contentBytes.length);
+    }
+
+    private Map<String, AssetInfo> parseAssets(JsonNode node) throws ParseException {
+        if (node == null) {
+            return Map.of();
+        }
+
+        if (!node.isObject()) {
+            throw new ParseException(ValidationErrorCode.UNKNOWN_SCHEMA_VERSION, "assets");
+        }
+
+        final var assets = new HashMap<String, AssetInfo>();
+        for (final var it = node.fields(); it.hasNext(); ) {
+            final var entry = it.next();
+            final var info = entry.getValue();
+
+            assets.put(entry.getKey(), new AssetInfo(
+                    info.path("type").isTextual() ? info.get("type").asText() : null,
+                    integral(info.path("bytes")),
+                    integral(info.path("width")),
+                    integral(info.path("height")),
+                    integral(info.path("frames"))));
+        }
+
+        return assets;
+    }
+
+    private static Long integral(JsonNode node) {
+        return node.isIntegralNumber() ? node.asLong() : null;
+    }
+
+    private Map<String, String> parseAssetNames(JsonNode node) throws ParseException {
+        if (node == null) {
+            return Map.of();
+        }
+
+        if (!node.isObject()) {
+            throw new ParseException(ValidationErrorCode.UNKNOWN_SCHEMA_VERSION, "assetNames");
+        }
+
+        final var names = new HashMap<String, String>();
+        for (final var it = node.fields(); it.hasNext(); ) {
+            final var entry = it.next();
+
+            names.put(entry.getKey(), entry.getValue().isTextual() ? entry.getValue().asText() : null);
+        }
+
+        return names;
     }
 
     private TypeSchema parseTypeSchema(JsonNode node, String path) throws ParseException {
@@ -122,6 +173,7 @@ public final class ContractParser {
             case "double" -> new TypeSchema.DoubleType();
             case "bool" -> new TypeSchema.BoolType();
             case "item" -> new TypeSchema.ItemType();
+            case "asset" -> new TypeSchema.AssetType();
             case "list" -> {
                 final var ofNode = node.get("of");
                 if (ofNode == null) {

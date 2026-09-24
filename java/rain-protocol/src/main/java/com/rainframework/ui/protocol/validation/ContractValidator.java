@@ -1,6 +1,7 @@
 package com.rainframework.ui.protocol.validation;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.rainframework.ui.protocol.AssetInfo;
 import com.rainframework.ui.protocol.ComponentNode;
 import com.rainframework.ui.protocol.Contract;
 import com.rainframework.ui.protocol.Limits;
@@ -17,10 +18,14 @@ import java.util.regex.Pattern;
 public final class ContractValidator {
     private static final Pattern ID_PATTERN = Pattern.compile("^[a-z0-9_-]+:[a-z0-9_/-]+$");
     private static final Pattern COLOR_PATTERN = Pattern.compile("^#[0-9A-Fa-f]{6}$");
+    private static final Pattern HASH_PATTERN = Pattern.compile("^[0-9a-f]{64}$");
+    private static final Set<String> IMAGE_TYPES = Set.of("image/png", "image/jpeg", "image/gif");
+    private static final Set<String> FONT_TYPES = Set.of("font/ttf", "font/otf");
     private static final Map<String, Set<String>> COMPONENT_PROPS = Map.ofEntries(
             Map.entry("column", Set.of("gap", "padding", "align", "justify", "width", "height")),
             Map.entry("row", Set.of("gap", "padding", "align", "justify", "width", "height")),
-            Map.entry("text", Set.of("value", "color", "align", "shadow")),
+            Map.entry("text", Set.of("value", "color", "font", "align", "shadow")),
+            Map.entry("image", Set.of("src", "width", "height")),
             Map.entry("item", Set.of("value", "size")),
             Map.entry("button", Set.of("action", "payload", "disabled")),
             Map.entry("list", Set.of("source")),
@@ -52,8 +57,106 @@ public final class ContractValidator {
             return actionsCheck;
         }
 
-        final var validator = new NodeValidator(contract.actions());
+        final var assetsCheck = validateAssets(contract.assets(), contract.assetNames());
+        if (!assetsCheck.isValid()) {
+            return assetsCheck;
+        }
+
+        final var validator = new NodeValidator(contract.actions(), contract.assets());
         return validator.validateNode(contract.root(), "root", contract.properties(), 0, null);
+    }
+
+    // Table-wide checks come first, so a malformed or oversized table is reported as a whole before any single entry.
+    private static ValidationResult validateAssets(Map<String, AssetInfo> assets, Map<String, String> assetNames) {
+        if (!assets.keySet().stream().allMatch(hash -> HASH_PATTERN.matcher(hash).matches())) {
+            return ValidationResult.fail(ValidationErrorCode.INVALID_ASSET_HASH, "assets");
+        }
+
+        if (assets.size() > Limits.MAX_ASSETS) {
+            return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, "assets");
+        }
+
+        final var totalBytes = assets.values().stream()
+                .mapToLong(info -> info.bytes() == null ? 0 : info.bytes())
+                .sum();
+        if (totalBytes > Limits.MAX_TOTAL_ASSET_BYTES) {
+            return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, "assets");
+        }
+
+        for (final var entry : assets.entrySet()) {
+            final var result = validateAssetInfo(entry.getValue(), "assets." + entry.getKey());
+            if (!result.isValid()) {
+                return result;
+            }
+        }
+
+        for (final var entry : assetNames.entrySet()) {
+            if (entry.getValue() == null || !assets.containsKey(entry.getValue())) {
+                return ValidationResult.fail(ValidationErrorCode.UNDECLARED_ASSET, "assetNames." + entry.getKey());
+            }
+        }
+
+        return ValidationResult.ok();
+    }
+
+    private static ValidationResult validateAssetInfo(AssetInfo info, String path) {
+        // Set.of rejects contains(null), so a missing type is checked before the lookups.
+        final var type = info.type();
+        if (type == null || !isCount(info.bytes())) {
+            return ValidationResult.fail(ValidationErrorCode.UNSUPPORTED_ASSET, path);
+        }
+
+        final var isImage = IMAGE_TYPES.contains(type);
+        if (!isImage && !FONT_TYPES.contains(type)) {
+            return ValidationResult.fail(ValidationErrorCode.UNSUPPORTED_ASSET, path);
+        }
+
+        if (info.bytes() > Limits.MAX_ASSET_BYTES) {
+            return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, path);
+        }
+
+        if (!isImage) {
+            return ValidationResult.ok();
+        }
+
+        if (!isPositive(info.width()) || !isPositive(info.height())) {
+            return ValidationResult.fail(ValidationErrorCode.UNSUPPORTED_ASSET, path);
+        }
+
+        if (info.width() > Limits.MAX_IMAGE_DIMENSION || info.height() > Limits.MAX_IMAGE_DIMENSION) {
+            return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, path);
+        }
+
+        if (!type.equals("image/gif")) {
+            return ValidationResult.ok();
+        }
+
+        if (!isPositive(info.frames())) {
+            return ValidationResult.fail(ValidationErrorCode.UNSUPPORTED_ASSET, path);
+        }
+
+        final var decodedBytes = info.width() * info.height() * 4 * info.frames();
+        if (info.frames() > Limits.MAX_GIF_FRAMES || decodedBytes > Limits.MAX_GIF_DECODED_BYTES) {
+            return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, path);
+        }
+
+        return ValidationResult.ok();
+    }
+
+    private static boolean isCount(Long value) {
+        return value != null && value >= 0;
+    }
+
+    private static boolean isPositive(Long value) {
+        return value != null && value > 0;
+    }
+
+    private static boolean isSize(JsonNode value) {
+        return value.isNumber() || value.isTextual() && (value.asText().equals("fit") || value.asText().equals("fill"));
+    }
+
+    private static boolean isAssetRef(JsonNode node) {
+        return node != null && node.isObject() && node.size() == 1 && node.path("$asset").isTextual();
     }
 
     private ValidationResult validateBasicConstraints(Contract contract) {
@@ -153,6 +256,7 @@ public final class ContractValidator {
     @RequiredArgsConstructor
     private static class NodeValidator {
         private final Map<String, TypeSchema> actions;
+        private final Map<String, AssetInfo> assets;
         private int nodeCount = 0;
 
         ValidationResult validateNode(ComponentNode node, String path, Map<String, TypeSchema> scope, int depth, String parentType) {
@@ -204,6 +308,13 @@ public final class ContractValidator {
             return switch (prop) {
                 case "text.value" -> validateTextValue(value, path, scope);
                 case "text.color" -> validateColor(value, path, scope);
+                case "text.font" -> validateAssetRef(value, path, FONT_TYPES);
+                case "image.src" -> isBinding(value)
+                        ? validateBinding(value, path, scope, TypeSchema.AssetType.class::isInstance)
+                        : validateAssetRef(value, path, IMAGE_TYPES);
+                case "image.width", "image.height" -> isSize(value)
+                        ? ValidationResult.ok()
+                        : ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
                 case "column.gap", "column.padding", "row.gap", "row.padding" -> value.isNumber()
                         ? ValidationResult.ok()
                         : ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
@@ -217,6 +328,23 @@ public final class ContractValidator {
                 case "match.value" -> validateBinding(value, path, scope, ContractValidator::isMatchable);
                 default -> ValidationResult.ok();
             };
+        }
+
+        private ValidationResult validateAssetRef(JsonNode value, String path, Set<String> acceptedTypes) {
+            if (!isAssetRef(value)) {
+                return ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
+            }
+
+            final var info = assets.get(value.get("$asset").asText());
+            if (info == null) {
+                return ValidationResult.fail(ValidationErrorCode.UNDECLARED_ASSET, path);
+            }
+
+            if (info.type() == null || !acceptedTypes.contains(info.type())) {
+                return ValidationResult.fail(ValidationErrorCode.ASSET_TYPE_MISMATCH, path);
+            }
+
+            return ValidationResult.ok();
         }
 
         private ValidationResult validateAction(JsonNode value, String path) {

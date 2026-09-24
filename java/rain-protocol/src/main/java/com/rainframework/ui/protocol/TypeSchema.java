@@ -6,7 +6,7 @@ import java.util.Map;
 
 public sealed interface TypeSchema
         permits TypeSchema.StringType, TypeSchema.IntType, TypeSchema.LongType, TypeSchema.DoubleType,
-        TypeSchema.BoolType, TypeSchema.ItemType, TypeSchema.ListType, TypeSchema.ObjectType,
+        TypeSchema.BoolType, TypeSchema.ItemType, TypeSchema.AssetType, TypeSchema.ListType, TypeSchema.ObjectType,
         TypeSchema.OptionalType {
 
     record StringType() implements TypeSchema {}
@@ -20,6 +20,9 @@ public sealed interface TypeSchema
     record BoolType() implements TypeSchema {}
 
     record ItemType() implements TypeSchema {}
+
+    /** The value is the name of one of the screen's declared assets, never a hash or a URL. */
+    record AssetType() implements TypeSchema {}
 
     record ListType(TypeSchema of) implements TypeSchema {}
 

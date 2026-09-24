@@ -8,5 +8,7 @@ public record Contract(
         Map<String, TypeSchema> properties,
         Map<String, TypeSchema> actions,
         ComponentNode root,
+        Map<String, AssetInfo> assets,
+        Map<String, String> assetNames,
         int sourceBytes) {
 }
