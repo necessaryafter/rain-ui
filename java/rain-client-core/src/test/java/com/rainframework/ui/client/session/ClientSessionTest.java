@@ -251,6 +251,20 @@ class ClientSessionTest {
         assertEquals(new ScreenClosed(2), sent.packet());
     }
 
+    @Test
+    void forgetsTheServerOnReset() throws Exception {
+        session.onOpenScreen(new OpenScreen(1, "test:banner", serveContract(bannerHash, 32, 16), 0, PROPERTIES));
+        platform.awaitOpened();
+
+        session.reset();
+
+        assertNull(session.current());
+        assertEquals(1, platform.closed.poll(5, TimeUnit.SECONDS));
+
+        session.onOpenScreen(new OpenScreen(2, "test:banner", "b".repeat(64), 0, PROPERTIES));
+        assertEquals(new ScreenFailed(2, ScreenFailureReason.DOWNLOAD_FAILED), connection.awaitFailure());
+    }
+
     // A screen that is still downloading when a newer one arrives is dropped instead of opened over it.
     @Test
     void ignoresAnOlderScreenThatFinishesLoadingLate() throws Exception {

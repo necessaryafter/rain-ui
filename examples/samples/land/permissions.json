@@ -1,0 +1,10 @@
+{
+  "title": "Permissões padrão",
+  "isChunkOverride": false,
+  "permissions": [
+    { "action": "BREAK", "actionLabel": "Quebrar blocos", "scope": "TRUSTED", "scopeLabel": "Jogadores confiados", "isDefault": true },
+    { "action": "INTERACT", "actionLabel": "Usar portas e botões", "scope": "CITY", "scopeLabel": "Residentes da cidade", "isDefault": false },
+    { "action": "PVP", "actionLabel": "PvP", "scope": "PUBLIC", "scopeLabel": "Qualquer jogador", "isDefault": true }
+  ],
+  "trusted": [ { "playerId": "7f2a", "playerName": "Brock" } ]
+}

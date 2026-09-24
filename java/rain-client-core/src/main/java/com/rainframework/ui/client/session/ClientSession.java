@@ -145,6 +145,13 @@ public final class ClientSession {
         current = null;
     }
 
+    /** Forgets everything about the server on disconnect; the session is reused for the next connection. */
+    public void reset() {
+        closeCurrent();
+        assetBaseUrl = null;
+        latestOpening = -1;
+    }
+
     public @Nullable ScreenController current() {
         return current;
     }

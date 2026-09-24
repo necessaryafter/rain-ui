@@ -1,0 +1,24 @@
+{
+  "pageLabel": "1/3",
+  "isFirstPage": true,
+  "isLastPage": false,
+  "listings": [
+    {
+      "id": "a1", "pokemon": { "$item": "minecraft:egg" }, "pokemonName": "Pikachu", "sellerName": "Ash",
+      "saleType": "FIXED_PRICE", "status": "ACTIVE", "statusLabel": "Ativo", "priceLabel": "1.250,50 ₽",
+      "bidSummary": {}, "timeLeft": "expira em 3h", "typeIcon": "fire", "isMine": false
+    },
+    {
+      "id": "a2", "pokemon": { "$item": "minecraft:turtle_egg" }, "pokemonName": "Squirtle", "sellerName": "Misty",
+      "saleType": "AUCTION", "status": "ACTIVE", "statusLabel": "Ativo",
+      "bidSummary": { "currentBidLabel": "900 ₽", "currentBidderName": "Brock", "bidCount": 4 },
+      "timeLeft": "expira em 12 min", "typeIcon": "water", "isMine": true
+    },
+    {
+      "id": "a3", "pokemon": { "$item": "minecraft:sniffer_egg" }, "pokemonName": "Bulbasaur", "sellerName": "Gary",
+      "saleType": "AUCTION", "status": "AWAITING_CLAIM", "statusLabel": "Aguardando retirada",
+      "bidSummary": { "startingBidLabel": "500 ₽" }, "timeLeft": "encerrado", "typeIcon": "grass",
+      "awaitingClaimLabel": "Inventário cheio", "isMine": false
+    }
+  ]
+}

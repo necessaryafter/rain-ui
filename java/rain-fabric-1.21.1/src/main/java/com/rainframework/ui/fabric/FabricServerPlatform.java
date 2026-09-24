@@ -26,6 +26,7 @@ public final class FabricServerPlatform implements ServerPlatform {
     public <T> void send(PlayerRef player, PacketType<T> type, T packet) {
         final var target = server.getPlayerList().getPlayer(player.id());
         if (target == null) {
+            logger.debug("Dropped {} for {}: not in the player list", type.id(), player.name());
             return;
         }
 

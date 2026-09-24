@@ -1,5 +1,6 @@
 package com.rainframework.ui.server;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
@@ -19,6 +20,20 @@ public final class Properties {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    /** Properties taken as they are from a JSON object, e.g. a sample file; they are still validated on open. */
+    public static Properties fromJson(JsonNode object) {
+        if (!object.isObject()) {
+            throw new IllegalArgumentException("Properties must be a JSON object");
+        }
+
+        final var values = new LinkedHashMap<String, @Nullable Object>();
+        for (final var entry : object.properties()) {
+            values.put(entry.getKey(), entry.getValue());
+        }
+
+        return new Properties(values);
     }
 
     public static Properties empty() {

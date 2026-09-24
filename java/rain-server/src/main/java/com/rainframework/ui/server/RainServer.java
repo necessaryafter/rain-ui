@@ -24,6 +24,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.LongSupplier;
@@ -144,6 +145,15 @@ public final class RainServer {
 
         instance.setOpen(false);
         platform.send(instance.getPlayer(), RainPackets.CLOSE_SCREEN, new CloseScreen(instance.getId()));
+    }
+
+    /** An item as the version module encodes it for properties, for code that builds properties as raw JSON. */
+    public String encodeItem(Object item) {
+        return platform.encodeItem(item);
+    }
+
+    public Set<String> screenIds() {
+        return registry.screens().keySet();
     }
 
     /** Every open instance of a screen, e.g. to push a new bid to everyone looking at an auction. */

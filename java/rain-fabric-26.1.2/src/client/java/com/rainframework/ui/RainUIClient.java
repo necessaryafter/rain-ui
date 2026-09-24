@@ -41,30 +41,35 @@ public final class RainUIClient implements ClientModInitializer {
         final var consent = new ConsentStore(directory.resolve("consent.json"));
         final var fetcher = new ContentFetcher(downloads);
 
-        receive(RainPackets.SERVER_HELLO, ClientSession::onServerHello);
+        receive(RainPackets.SERVER_HELLO, (active, hello) -> {
+            LOGGER.info("Rain UI server detected (protocol {}, content from {})", hello.protocolVersion(),
+                    hello.assetBaseUrl());
+            active.onServerHello(hello);
+        });
         receive(RainPackets.OPEN_SCREEN, ClientSession::onOpenScreen);
         receive(RainPackets.UPDATE_SCREEN, ClientSession::onUpdateScreen);
         receive(RainPackets.INTERACTION_REJECTED, ClientSession::onInteractionRejected);
         receive(RainPackets.CLOSE_SCREEN, ClientSession::onCloseScreen);
 
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            final var platform = new FabricClientPlatform(store);
-            session = ClientSession.builder()
-                    .platform(platform)
-                    .connection(new ServerConnection() {
+        // Created once, before any connection: a ServerHello can arrive before the client's join event fires.
+        final var platform = new FabricClientPlatform(store);
+        session = ClientSession.builder()
+                .platform(platform)
+                .connection(new ServerConnection() {
 
-                        @Override
-                        public <T> void send(PacketType<T> type, T packet) {
-                            ClientPlayNetworking.send(RainPayloads.encode(type, packet));
-                        }
-                    })
-                    .store(store)
-                    .fetcher(fetcher)
-                    .consent(consent)
-                    .build();
-            platform.attach(session);
-        });
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> session = null);
+                    @Override
+                    public <T> void send(PacketType<T> type, T packet) {
+                        ClientPlayNetworking.send(RainPayloads.encode(type, packet));
+                    }
+                })
+                .store(store)
+                .fetcher(fetcher)
+                .consent(consent)
+                .build();
+        platform.attach(session);
+
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(session::reset));
+        LOGGER.info("Rain UI client ready (cache at {})", directory.resolve("cache"));
     }
 
     private <T> void receive(PacketType<T> type, BiConsumer<ClientSession, T> handler) {

@@ -1,6 +1,7 @@
 package com.rainframework.ui;
 
 import com.rainframework.ui.fabric.FabricServerPlatform;
+import com.rainframework.ui.fabric.RainCommands;
 import com.rainframework.ui.fabric.RainConfig;
 import com.rainframework.ui.fabric.RainPayloads;
 import com.rainframework.ui.protocol.packet.PacketDecodeException;
@@ -11,6 +12,7 @@ import com.rainframework.ui.server.PlayerRef;
 import com.rainframework.ui.server.RainServer;
 import com.rainframework.ui.server.http.ContentHttpServer;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -41,10 +43,16 @@ public final class RainUIServer implements ModInitializer {
         receive(RainPackets.SCREEN_CLOSED, (player, packet) -> RainUI.server().onScreenClosed(player, packet));
         receive(RainPackets.SCREEN_FAILED, (player, packet) -> RainUI.server().onScreenFailed(player, packet));
 
+        final var samples = FabricLoader.getInstance().getConfigDir().resolve("rain-ui").resolve("samples");
+        CommandRegistrationCallback.EVENT.register((dispatcher, registries, environment) ->
+                new RainCommands(samples).register(dispatcher));
+
         ServerLifecycleEvents.SERVER_STARTING.register(this::start);
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> stop());
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
-                RainUI.server().onPlayerJoin(RainUI.player(handler.getPlayer())));
+        // JOIN fires inside placeNewPlayer, before the player is in the player list that sends are resolved against,
+        // so the hello goes out on the next tick.
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> server.execute(() ->
+                RainUI.server().onPlayerJoin(RainUI.player(handler.getPlayer()))));
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
                 RainUI.server().onPlayerLeave(RainUI.player(handler.getPlayer())));
     }

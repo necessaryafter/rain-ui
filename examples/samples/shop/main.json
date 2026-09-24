@@ -1,0 +1,7 @@
+{
+  "items": [
+    { "id": "sword", "name": "Espada de Diamante", "priceLabel": "1.250 ₽", "icon": { "$item": "minecraft:diamond_sword" }, "locked": false },
+    { "id": "apple", "name": "Maçã Dourada", "priceLabel": "300 ₽", "icon": { "$item": "minecraft:golden_apple", "count": 3 }, "locked": false },
+    { "id": "elytra", "name": "Élitros", "priceLabel": "9.999 ₽", "icon": { "$item": "minecraft:elytra" }, "locked": true }
+  ]
+}

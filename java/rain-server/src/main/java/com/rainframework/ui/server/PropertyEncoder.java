@@ -33,6 +33,7 @@ final class PropertyEncoder {
     private JsonNode encode(@Nullable Object value) {
         return switch (value) {
             case null -> JSON.nullNode();
+            case JsonNode node -> node.deepCopy();
             case String text -> JSON.textNode(text);
             case Boolean bool -> JSON.booleanNode(bool);
             case Integer number -> JSON.numberNode(number);

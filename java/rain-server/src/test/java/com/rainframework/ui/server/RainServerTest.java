@@ -1,5 +1,6 @@
 package com.rainframework.ui.server;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rainframework.ui.protocol.packet.ClientHello;
 import com.rainframework.ui.protocol.packet.CloseScreen;
 import com.rainframework.ui.protocol.packet.Interact;
@@ -132,6 +133,17 @@ class RainServerTest {
 
         assertEquals("balance", error.getError().getPath());
         assertTrue(platform.sent.isEmpty(), "nothing is sent for invalid properties");
+    }
+
+    @Test
+    void opensWithPropertiesTakenFromJson() throws Exception {
+        final var json = new ObjectMapper().readTree("""
+                { "items": [ { "id": "a", "name": "A", "priceLabel": "1", "icon": "AA==", "locked": false } ] }
+                """);
+
+        assertNotNull(server.open(ASH, "shop:main", Properties.fromJson(json)));
+        assertThrows(InvalidPropertiesException.class, () -> server.open(ASH, "shop:main",
+                Properties.fromJson(new ObjectMapper().readTree("{\"items\": 3}"))));
     }
 
     @Test
