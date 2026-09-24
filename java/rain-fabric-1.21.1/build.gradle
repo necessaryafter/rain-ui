@@ -23,9 +23,20 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:0.19.5"
     modImplementation "net.fabricmc.fabric-api:fabric-api:0.116.17+1.21.1"
 
-    implementation project(":rain-protocol")
-    implementation project(":rain-server")
-    implementation project(":rain-client-core")
+    // Nested in the mod jar (jar-in-jar), since players install one file and Minecraft ships no Jackson.
+    include(implementation(project(":rain-protocol")))
+    include(implementation(project(":rain-server")))
+    include(implementation(project(":rain-client-core")))
+    include("com.fasterxml.jackson.core:jackson-databind:2.17.1")
+    include("com.fasterxml.jackson.core:jackson-core:2.17.1")
+    include("com.fasterxml.jackson.core:jackson-annotations:2.17.1")
+
+    compileOnly 'org.jspecify:jspecify:1.0.0'
+    clientCompileOnly 'org.jspecify:jspecify:1.0.0'
+}
+
+repositories {
+    mavenCentral()
 }
 
 tasks.withType(JavaCompile).configureEach {

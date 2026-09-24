@@ -44,9 +44,9 @@ public final class RainServer {
     private final Map<UUID, PlayerSession> sessions = new ConcurrentHashMap<>();
 
     @Getter
-    private final Adapters adapters = new Adapters();
+    private final Adapters adapters;
     @Getter
-    private final Event<InteractionEvent> interactions = new Event<>();
+    private final Event<InteractionEvent> interactions;
 
     private final PropertyEncoder encoder;
 
@@ -55,13 +55,17 @@ public final class RainServer {
             ServerPlatform platform,
             ContractRegistry registry,
             String assetBaseUrl,
+            @Nullable Adapters adapters,
+            @Nullable Event<InteractionEvent> interactions,
             @Nullable LongSupplier nanoClock
     ) {
         this.platform = platform;
         this.registry = registry;
         this.assetBaseUrl = assetBaseUrl;
+        this.adapters = adapters == null ? new Adapters() : adapters;
+        this.interactions = interactions == null ? new Event<>() : interactions;
         this.nanoClock = nanoClock == null ? System::nanoTime : nanoClock;
-        this.encoder = new PropertyEncoder(adapters, platform);
+        this.encoder = new PropertyEncoder(this.adapters, platform);
     }
 
     public void onPlayerJoin(PlayerRef player) {
