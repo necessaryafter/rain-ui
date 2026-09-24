@@ -13,6 +13,7 @@ const ListingCard = t.object({
   id: t.string(),
   pokemon: t.item(),
   pokemonName: t.string(),
+  typeIcon: t.asset(), // "fire", "water" or "grass": the name of one of the screen's assets, never a hash or URL
   sellerName: t.string(),
 
   saleType: t.string(),

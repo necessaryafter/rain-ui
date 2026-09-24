@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 0,
+  "id": "test:asset-name-unknown-hash",
+  "properties": {
+    "icon": {
+      "kind": "asset"
+    }
+  },
+  "actions": {},
+  "assets": {
+    "b2ee0ef0cf4fd36e0d0426ec06dbe1db77735997c628f1aafd6eb4c14b0b567a": {
+      "type": "image/png",
+      "bytes": 512,
+      "width": 16,
+      "height": 16
+    }
+  },
+  "assetNames": {
+    "fire": "45aa5aaf8919cea71c3bece11873ad646e3e6746bdaab1f690916dc30253aecc"
+  },
+  "root": {
+    "type": "image",
+    "props": {
+      "src": {
+        "$bind": "icon"
+      }
+    },
+    "children": []
+  }
+}

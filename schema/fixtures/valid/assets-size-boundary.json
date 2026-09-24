@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 0,
+  "id": "test:assets-size-boundary",
+  "properties": {},
+  "actions": {},
+  "assets": {
+    "3ac718522717487ad4593401e2c9fa5559d3180c31cc896bc42a6c1eec6324fe": {
+      "type": "image/png",
+      "bytes": 8388608,
+      "width": 4096,
+      "height": 4096
+    },
+    "8c555221d3db0f33ac65165990545bbf53a447c58d0179b6dfa8729e52fffe54": {
+      "type": "image/png",
+      "bytes": 8388608,
+      "width": 16,
+      "height": 16
+    },
+    "831bb904d98d118e62d2ea59b1850bec9ff03196301285dc4212cb43f65c08a7": {
+      "type": "image/png",
+      "bytes": 8388608,
+      "width": 16,
+      "height": 16
+    },
+    "ec5a50f8722d1d1d104a7db4e2202dc2144a5ad2113ad6baddd7ace7af3e038d": {
+      "type": "image/png",
+      "bytes": 8388608,
+      "width": 16,
+      "height": 16
+    },
+    "989c6d3866b9729e9319610a2e58e0f14a198b8bf6ee6d8947dc8f089765c435": {
+      "type": "image/png",
+      "bytes": 8388608,
+      "width": 16,
+      "height": 16
+    },
+    "875fa64a6877f60425d34bb8d7889811bf1399fb7e7647db4971669d39e4d85c": {
+      "type": "image/png",
+      "bytes": 8388608,
+      "width": 16,
+      "height": 16
+    },
+    "f23eafdba8a6d3b35623208dc4ae9a9ce7eb12e489eeb266c212f718d1251345": {
+      "type": "image/png",
+      "bytes": 8388608,
+      "width": 16,
+      "height": 16
+    },
+    "8af2727e24ae8c2c43010e00221bce6c38bc1a5e9afef2e494eee7d406a25b1d": {
+      "type": "image/gif",
+      "bytes": 8388608,
+      "width": 32,
+      "height": 32,
+      "frames": 512
+    }
+  },
+  "root": {
+    "type": "column",
+    "props": {
+      "gap": 4
+    },
+    "children": [
+      {
+        "type": "image",
+        "props": {
+          "src": {
+            "$asset": "3ac718522717487ad4593401e2c9fa5559d3180c31cc896bc42a6c1eec6324fe"
+          }
+        },
+        "children": []
+      },
+      {
+        "type": "image",
+        "props": {
+          "src": {
+            "$asset": "8af2727e24ae8c2c43010e00221bce6c38bc1a5e9afef2e494eee7d406a25b1d"
+          }
+        },
+        "children": []
+      }
+    ]
+  }
+}

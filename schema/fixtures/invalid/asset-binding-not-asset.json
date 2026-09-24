@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 0,
+  "id": "test:asset-binding-not-asset",
+  "properties": {
+    "icon": {
+      "kind": "string"
+    }
+  },
+  "actions": {},
+  "assets": {
+    "b2ee0ef0cf4fd36e0d0426ec06dbe1db77735997c628f1aafd6eb4c14b0b567a": {
+      "type": "image/png",
+      "bytes": 512,
+      "width": 16,
+      "height": 16
+    }
+  },
+  "assetNames": {
+    "fire": "b2ee0ef0cf4fd36e0d0426ec06dbe1db77735997c628f1aafd6eb4c14b0b567a"
+  },
+  "root": {
+    "type": "image",
+    "props": {
+      "src": {
+        "$bind": "icon"
+      }
+    },
+    "children": []
+  }
+}

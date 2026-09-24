@@ -1,5 +1,7 @@
 # Rain UI
 
+**English** | [Português](./README.pt-BR.md)
+
 **A TypeScript-powered declarative UI framework for Minecraft Java Edition.**
 
 > **Write in TypeScript. Run in Java.**
@@ -496,21 +498,6 @@ Expect:
 Do not assume that the current protocol or APIs are stable.
 
 If you are interested in the project, following the repository and experimenting with it is encouraged.
-
----
-
-# Contributing
-
-Rain UI is still early enough that architectural feedback can be particularly valuable.
-
-Before making substantial changes, consider reading:
-
-* [`AGENTS.md`](./AGENTS.md)
-* [`CODE_STYLE.md`](./CODE_STYLE.md)
-* [`docs/`](./docs/)
-* [`specs/`](./specs/)
-
-For changes to the protocol or security model, documenting the design and threat model is especially important.
 
 ---
 

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 0,
+  "id": "test:asset-wrong-type",
+  "properties": {},
+  "actions": {},
+  "assets": {
+    "b018f9cd545321796bbd320c3b844defd9a2e1b22d1859c1931b1f9016e92c8f": {
+      "type": "font/ttf",
+      "bytes": 21504
+    }
+  },
+  "root": {
+    "type": "image",
+    "props": {
+      "src": {
+        "$asset": "b018f9cd545321796bbd320c3b844defd9a2e1b22d1859c1931b1f9016e92c8f"
+      }
+    },
+    "children": []
+  }
+}

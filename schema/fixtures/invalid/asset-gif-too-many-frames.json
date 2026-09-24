@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 0,
+  "id": "test:asset-gif-too-many-frames",
+  "properties": {},
+  "actions": {},
+  "assets": {
+    "8af2727e24ae8c2c43010e00221bce6c38bc1a5e9afef2e494eee7d406a25b1d": {
+      "type": "image/gif",
+      "bytes": 90112,
+      "width": 32,
+      "height": 32,
+      "frames": 513
+    }
+  },
+  "root": {
+    "type": "image",
+    "props": {
+      "src": {
+        "$asset": "8af2727e24ae8c2c43010e00221bce6c38bc1a5e9afef2e494eee7d406a25b1d"
+      }
+    },
+    "children": []
+  }
+}
