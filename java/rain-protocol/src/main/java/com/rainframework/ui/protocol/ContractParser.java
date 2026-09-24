@@ -85,7 +85,15 @@ public final class ContractParser {
         final var assets = parseAssets(root.get("assets"));
         final var assetNames = parseAssetNames(root.get("assetNames"));
 
-        return new Contract(schemaVersion, id, properties, actions, rootComponent, assets, assetNames, contentBytes.length);
+        return new Contract(
+                schemaVersion,
+                id,
+                properties,
+                actions,
+                rootComponent,
+                assets,
+                assetNames,
+                contentBytes.length);
     }
 
     private Map<String, AssetInfo> parseAssets(JsonNode node) throws ParseException {

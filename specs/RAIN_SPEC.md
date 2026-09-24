@@ -349,6 +349,17 @@ GET <assetBaseUrl>/<sha256 em hex minúsculo>   →   os bytes do arquivo
 | `ScreenClosed` | `instanceId`                                        |
 | `ScreenFailed` | `instanceId`, `reason`                              |
 
+### Encoding
+
+- Cada pacote é um custom payload próprio, com ID `rain:<nome>` (`rain:server_hello`, `rain:open_screen`,
+  `rain:update_screen`, `rain:interaction_rejected`, `rain:close_screen`, `rain:client_hello`, `rain:interact`,
+  `rain:screen_closed`, `rain:screen_failed`). Os bytes não levam cabeçalho de tipo.
+- Inteiros são VarInt sem sinal (o LEB128 do Minecraft, até 5 bytes, só valores não negativos). Strings e JSON levam o
+  tamanho em bytes como VarInt e depois o UTF-8, que precisa ser válido. O hash vai como 32 bytes crus.
+- O leitor checa cada tamanho contra o limite do campo e contra o que resta no pacote **antes de alocar**, e recusa
+  bytes sobrando no fim.
+- `protocolVersion` começa em `1`.
+
 ### Regras
 
 - **Handshake no join.** Se a versão do protocolo for incompatível, o servidor não abre telas Rain para esse jogador e

@@ -1,0 +1,18 @@
+{
+  "name": "Pallet",
+  "banner": { "$item": "minecraft:white_banner" },
+  "mayorName": "Prof. Oak",
+  "developmentLevel": 3,
+  "taxRate": 5,
+  "treasuryLabel": "12.500,00 ₽",
+  "joinPolicy": "PUBLIC",
+  "joinPolicyLabel": "Pública (aceita pedidos)",
+  "government": { "religion": "Culto a Arceus" },
+  "roles": [
+    { "playerName": "Ash", "typeLabel": "Vice-prefeito" },
+    { "playerName": "Delia", "typeLabel": "Ministro da Fazenda" }
+  ],
+  "joinRequests": [ { "playerId": "4b1c", "playerName": "Gary" } ],
+  "canManageCity": true,
+  "canManageTreasury": true
+}

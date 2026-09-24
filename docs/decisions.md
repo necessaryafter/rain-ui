@@ -172,3 +172,29 @@ revisions and authentication where they already work.
 
 **Impact:** Spec §3.4, §4, §5.2–5.3, §6, §8, §10 and §11 were rewritten. A new milestone, M1.5, adds assets to the
 build before M2. The disk cache and `image` move from M3 into v0.
+
+## 9. Wire format and runtime validation (M2.1)
+
+**Status:** Decided in M2.1
+
+**What:**
+
+| Topic                 | Decision                                                                                                   |
+|-----------------------|------------------------------------------------------------------------------------------------------------|
+| Protocol version      | Starts at `1` (`RainProtocol.VERSION`).                                                                    |
+| Framing               | One custom payload per packet (`rain:<name>`); no type header in the bytes.                               |
+| Encoding              | Unsigned VarInt (LEB128, at most 5 bytes); UTF-8 strings prefixed by their byte length; the hash as 32 raw bytes. Trailing bytes are an error. |
+| Decoding              | Every length is checked against the field limit and the bytes left before allocating; invalid UTF-8 is rejected. |
+| Ids                   | `namespace:path`, at most 256 bytes, checked on both encode and decode.                                  |
+| `assetBaseUrl`        | Absolute `http(s)` URL with a host, no credentials, no query or fragment, at most 1024 bytes; trailing slashes are stripped. |
+| `ScreenFailed.reason` | Sent as the enum name, at most 64 bytes; an unknown name decodes as `OTHER`.                              |
+| Items in properties   | Base64 text of at most 32 KiB, checked before decoding; content opaque to the protocol.                   |
+| Properties errors     | `PROPERTIES_SCHEMA_MISMATCH` with a path like `listings[3].bidData.currentBid`; whole-document errors use `root`. |
+| Numbers               | An integer is accepted where a `double` is declared; a decimal is never accepted where an `int` or `long` is. |
+| Duplicate JSON keys   | Rejected, so the value that was validated is the value that gets read.                                    |
+| `Payload` accessors   | Strict by declared type (`getLong` on an `int` field throws); `getString` also reads `t.asset()` names; `find*` return `null` for absent or `null` values. |
+
+**Why:** Everything that arrives over the wire is untrusted, so limits are enforced before allocation and parsing, and
+the decoder is strict rather than forgiving. Unknown failure reasons map to `OTHER` so an older server still frees the
+instance a newer client reports.
+

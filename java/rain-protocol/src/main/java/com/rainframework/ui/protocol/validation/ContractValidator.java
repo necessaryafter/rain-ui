@@ -181,7 +181,11 @@ public final class ContractValidator {
         return ValidationResult.ok();
     }
 
-    private static ValidationResult validateSchemas(Map<String, TypeSchema> schemas, String path, boolean allowDefault) {
+    private static ValidationResult validateSchemas(
+            Map<String, TypeSchema> schemas,
+            String path,
+            boolean allowDefault
+    ) {
         for (final var entry : schemas.entrySet()) {
             final var result = validateSchema(entry.getValue(), path + "." + entry.getKey(), allowDefault);
             if (!result.isValid()) {
@@ -213,7 +217,11 @@ public final class ContractValidator {
     }
 
     // Defaults are only meaningful for properties the server sends; an action payload comes from the client.
-    private static ValidationResult validateDefault(TypeSchema.OptionalType optional, String path, boolean allowDefault) {
+    private static ValidationResult validateDefault(
+            TypeSchema.OptionalType optional,
+            String path,
+            boolean allowDefault
+    ) {
         final var value = optional.defaultValue();
         if (!allowDefault || !isScalar(optional.inner()) || !matchesKind(value, optional.inner())) {
             return ValidationResult.fail(ValidationErrorCode.INVALID_DEFAULT, path);
@@ -259,7 +267,13 @@ public final class ContractValidator {
         private final Map<String, AssetInfo> assets;
         private int nodeCount = 0;
 
-        ValidationResult validateNode(ComponentNode node, String path, Map<String, TypeSchema> scope, int depth, String parentType) {
+        ValidationResult validateNode(
+                ComponentNode node,
+                String path,
+                Map<String, TypeSchema> scope,
+                int depth,
+                String parentType
+        ) {
             nodeCount++;
             if (nodeCount > Limits.MAX_NODES || depth > Limits.MAX_DEPTH) {
                 return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, path);
@@ -359,7 +373,12 @@ public final class ContractValidator {
             return ValidationResult.ok();
         }
 
-        private ValidationResult validateChildren(ComponentNode node, String path, Map<String, TypeSchema> scope, int depth) {
+        private ValidationResult validateChildren(
+                ComponentNode node,
+                String path,
+                Map<String, TypeSchema> scope,
+                int depth
+        ) {
             final var children = node.children();
 
             if (node.type().equals("match")) {
@@ -399,7 +418,12 @@ public final class ContractValidator {
 
     // Checks what only the match itself knows: children are cases or one trailing default, and each case literal has
     // the type of the matched value and appears once.
-    private static ValidationResult validateMatchSlots(ComponentNode node, List<ComponentNode> children, String path, Map<String, TypeSchema> scope) {
+    private static ValidationResult validateMatchSlots(
+            ComponentNode node,
+            List<ComponentNode> children,
+            String path,
+            Map<String, TypeSchema> scope
+    ) {
         final var value = node.props().get("value");
         final var matched = isBinding(value) ? ResolvedPath.resolve(scope, value.get("$bind").asText()) : null;
         final var seen = new HashSet<JsonNode>();
@@ -460,7 +484,12 @@ public final class ContractValidator {
         return ValidationResult.ok();
     }
 
-    private static ValidationResult validateBinding(JsonNode value, String path, Map<String, TypeSchema> scope, Predicate<TypeSchema> accepts) {
+    private static ValidationResult validateBinding(
+            JsonNode value,
+            String path,
+            Map<String, TypeSchema> scope,
+            Predicate<TypeSchema> accepts
+    ) {
         if (!isBinding(value)) {
             return ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
         }
@@ -488,7 +517,12 @@ public final class ContractValidator {
         return itemScope == null ? scope : itemScope;
     }
 
-    private static ValidationResult validatePayloadValue(JsonNode value, TypeSchema schema, String path, Map<String, TypeSchema> scope) {
+    private static ValidationResult validatePayloadValue(
+            JsonNode value,
+            TypeSchema schema,
+            String path,
+            Map<String, TypeSchema> scope
+    ) {
         if (isBinding(value)) {
             final var resolved = ResolvedPath.resolve(scope, value.get("$bind").asText());
             if (resolved == null) {
@@ -517,7 +551,12 @@ public final class ContractValidator {
         };
     }
 
-    private static ValidationResult validatePayloadObject(JsonNode value, Map<String, TypeSchema> fields, String path, Map<String, TypeSchema> scope) {
+    private static ValidationResult validatePayloadObject(
+            JsonNode value,
+            Map<String, TypeSchema> fields,
+            String path,
+            Map<String, TypeSchema> scope
+    ) {
         if (!value.isObject()) {
             return ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path);
         }
@@ -546,7 +585,12 @@ public final class ContractValidator {
         return ValidationResult.ok();
     }
 
-    private static ValidationResult validatePayloadList(JsonNode value, TypeSchema of, String path, Map<String, TypeSchema> scope) {
+    private static ValidationResult validatePayloadList(
+            JsonNode value,
+            TypeSchema of,
+            String path,
+            Map<String, TypeSchema> scope
+    ) {
         if (!value.isArray()) {
             return ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path);
         }

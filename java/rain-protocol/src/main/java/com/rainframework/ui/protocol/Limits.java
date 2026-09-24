@@ -21,6 +21,11 @@ public final class Limits {
     public static final int MAX_IMAGE_DIMENSION = 4096;
     public static final int MAX_GIF_FRAMES = 512;
     public static final long MAX_GIF_DECODED_BYTES = 128L * 1024 * 1024;
+    public static final int MAX_ID_LENGTH = 256;
+    public static final int MAX_PROPERTY_STRING_LENGTH = 4096;
+    public static final int MAX_ITEM_BYTES = 32 * 1024;
+    public static final int MAX_ASSET_BASE_URL_LENGTH = 1024;
+    public static final int MAX_REASON_LENGTH = 64;
 
     private Limits() {
         // static only

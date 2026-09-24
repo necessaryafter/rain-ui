@@ -1,0 +1,200 @@
+{
+  "center": "overworld 12, -4",
+  "rows": [
+    {
+      "cells": [
+        {
+          "x": -2,
+          "z": -2,
+          "color": "#AAAAAA",
+          "label": ".",
+          "canClaim": true
+        },
+        {
+          "x": -1,
+          "z": -2,
+          "color": "#AAAAAA",
+          "label": ".",
+          "canClaim": true
+        },
+        {
+          "x": 0,
+          "z": -2,
+          "color": "#AAAAAA",
+          "label": ".",
+          "canClaim": true
+        },
+        {
+          "x": 1,
+          "z": -2,
+          "color": "#AAAAAA",
+          "label": ".",
+          "canClaim": true
+        },
+        {
+          "x": 2,
+          "z": -2,
+          "color": "#FFAA00",
+          "label": ".",
+          "canClaim": true
+        }
+      ]
+    },
+    {
+      "cells": [
+        {
+          "x": -2,
+          "z": -1,
+          "color": "#AAAAAA",
+          "label": ".",
+          "canClaim": true
+        },
+        {
+          "x": -1,
+          "z": -1,
+          "color": "#AAAAAA",
+          "label": ".",
+          "canClaim": true
+        },
+        {
+          "x": 0,
+          "z": -1,
+          "color": "#55FF55",
+          "label": "#",
+          "canClaim": false
+        },
+        {
+          "x": 1,
+          "z": -1,
+          "color": "#AAAAAA",
+          "label": ".",
+          "canClaim": true
+        },
+        {
+          "x": 2,
+          "z": -1,
+          "color": "#FFAA00",
+          "label": ".",
+          "canClaim": true
+        }
+      ]
+    },
+    {
+      "cells": [
+        {
+          "x": -2,
+          "z": 0,
+          "color": "#AAAAAA",
+          "label": ".",
+          "canClaim": true
+        },
+        {
+          "x": -1,
+          "z": 0,
+          "color": "#55FF55",
+          "label": "#",
+          "canClaim": false
+        },
+        {
+          "x": 0,
+          "z": 0,
+          "color": "#55FF55",
+          "label": "@",
+          "canClaim": false
+        },
+        {
+          "x": 1,
+          "z": 0,
+          "color": "#55FF55",
+          "label": "#",
+          "canClaim": false
+        },
+        {
+          "x": 2,
+          "z": 0,
+          "color": "#FFAA00",
+          "label": ".",
+          "canClaim": true
+        }
+      ]
+    },
+    {
+      "cells": [
+        {
+          "x": -2,
+          "z": 1,
+          "color": "#AAAAAA",
+          "label": ".",
+          "canClaim": true
+        },
+        {
+          "x": -1,
+          "z": 1,
+          "color": "#AAAAAA",
+          "label": ".",
+          "canClaim": true
+        },
+        {
+          "x": 0,
+          "z": 1,
+          "color": "#55FF55",
+          "label": "#",
+          "canClaim": false
+        },
+        {
+          "x": 1,
+          "z": 1,
+          "color": "#AAAAAA",
+          "label": ".",
+          "canClaim": true
+        },
+        {
+          "x": 2,
+          "z": 1,
+          "color": "#FFAA00",
+          "label": ".",
+          "canClaim": true
+        }
+      ]
+    },
+    {
+      "cells": [
+        {
+          "x": -2,
+          "z": 2,
+          "color": "#AAAAAA",
+          "label": ".",
+          "canClaim": true
+        },
+        {
+          "x": -1,
+          "z": 2,
+          "color": "#AAAAAA",
+          "label": ".",
+          "canClaim": true
+        },
+        {
+          "x": 0,
+          "z": 2,
+          "color": "#AAAAAA",
+          "label": ".",
+          "canClaim": true
+        },
+        {
+          "x": 1,
+          "z": 2,
+          "color": "#AAAAAA",
+          "label": ".",
+          "canClaim": true
+        },
+        {
+          "x": 2,
+          "z": 2,
+          "color": "#FFAA00",
+          "label": ".",
+          "canClaim": true
+        }
+      ]
+    }
+  ]
+}
