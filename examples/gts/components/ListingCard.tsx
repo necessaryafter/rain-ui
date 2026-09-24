@@ -3,6 +3,7 @@ export function ListingCard({ listing, open }: { listing: any; open: any }) {
     <button action={open} payload={{ listingId: listing.id }}>
       <row gap={4}>
         <item value={listing.pokemon} />
+        <image src={listing.typeIcon} width={16} height={16} />
         <column gap={2}>
           <text value={listing.pokemonName} />
           <text value={listing.sellerName} color="#AAAAAA" />
