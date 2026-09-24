@@ -13,7 +13,7 @@ export type { ValidationResult } from "./validate";
 export { compileScreen } from "./serialize";
 export type { CompiledScreen } from "./serialize";
 
-export type { TypeSchema, ComponentNode, Contract } from "./types";
+export type { AssetInfo, AssetRef, AssetType, ComponentNode, Contract, TypeSchema } from "./types";
 
 export { resolvePath } from "./path";
 export { findUnusedProperties } from "./unused";
@@ -34,7 +34,11 @@ export type ValidationErrorCode =
     | "LIMIT_EXCEEDED"
     | "INVALID_DEFAULT"
     | "MISPLACED_COMPONENT"
-    | "DUPLICATE_CASE";
+    | "DUPLICATE_CASE"
+    | "UNDECLARED_ASSET"
+    | "ASSET_TYPE_MISMATCH"
+    | "UNSUPPORTED_ASSET"
+    | "INVALID_ASSET_HASH";
 
 // Limit constants (per spec §5.5)
 export const Limits = {
@@ -48,4 +52,10 @@ export const Limits = {
     MAX_PAYLOAD_BYTES: 8 * 1024,
     MAX_PAYLOAD_DEPTH: 8,
     MAX_JSON_DEPTH: 128,
+    MAX_ASSET_BYTES: 8 * 1024 * 1024,
+    MAX_ASSETS: 256,
+    MAX_TOTAL_ASSET_BYTES: 64 * 1024 * 1024,
+    MAX_IMAGE_DIMENSION: 4096,
+    MAX_GIF_FRAMES: 512,
+    MAX_GIF_DECODED_BYTES: 128 * 1024 * 1024,
 };

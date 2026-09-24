@@ -1,5 +1,6 @@
+/// <reference path="./assets.d.ts" />
 import type { Binding, ActionRef } from "./src/binding";
-import type { TypeSchema } from "./src/types";
+import type { AssetRef, TypeSchema } from "./src/types";
 
 // Raw JSX tree node (before compilation to Contract JSON)
 export interface RawNode {
@@ -69,6 +70,7 @@ declare global {
       text: {
         value: string | Binding<string> | Binding<number>;
         color?: string | Binding<string>;
+        font?: AssetRef;
         align?: string;
         shadow?: boolean;
       };
@@ -76,6 +78,12 @@ declare global {
       item: {
         value: Binding<"item">;
         size?: number;
+      };
+
+      image: {
+        src: AssetRef | Binding<unknown>;
+        width?: number | "fit" | "fill";
+        height?: number | "fit" | "fill";
       };
 
       button: ButtonProps;

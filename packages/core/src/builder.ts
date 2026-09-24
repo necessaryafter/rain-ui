@@ -1,4 +1,4 @@
-import type { TBool, TDouble, TInt, TItem, TList, TLong, TObject, TString, TypeSchema } from "./types";
+import type { AssetRef, TAsset, TBool, TDouble, TInt, TItem, TList, TLong, TObject, TString, TypeSchema } from "./types";
 
 export type Optionable<S extends TypeSchema> = S & {
   optional(): S & { optional: true };
@@ -29,6 +29,7 @@ export const t = {
   double: () => defaultable<TDouble, number>({ kind: "double" }),
   bool: () => defaultable<TBool, boolean>({ kind: "bool" }),
   item: () => optionable<TItem>({ kind: "item" }),
+  asset: () => optionable<TAsset>({ kind: "asset" }),
   list: <Of extends TypeSchema>(of: Of) => optionable<TList>({ kind: "list", of }),
   object: <Fields extends Record<string, TypeSchema>>(fields: Fields) => optionable<TObject>({ kind: "object", fields }),
 };
@@ -45,34 +46,30 @@ export function defineActions<A extends Record<string, TypeSchema>>(actions: A):
 // Symbol.for so a screen built against another copy of @rain-ui/core (e.g. the CLI's) is still recognized.
 const SCREEN_DEFINITION_SYMBOL = Symbol.for("rain.screen");
 
-export interface ScreenDefinition<P extends Record<string, TypeSchema> = Record<string, TypeSchema>, A extends Record<string, TypeSchema> = Record<string, TypeSchema>> {
-    id: string;
-    properties: P;
-    actions: A;
-    render: (p: any, a: any) => any;
-    [SCREEN_DEFINITION_SYMBOL]: true;
+type Schemas = Record<string, TypeSchema>;
+
+interface ScreenOptions<P extends Schemas, A extends Schemas> {
+  id: string;
+  properties: P;
+  actions: A;
+  // Assets the server can pick at runtime through a t.asset() property, by these names.
+  assets?: Record<string, AssetRef>;
+  render: (p: any, a: any) => any;
 }
 
-export function defineScreen<
-    P extends Record<string, TypeSchema>,
-    A extends Record<string, TypeSchema>,
->(def: {
-    id: string;
-    properties: P;
-    actions: A;
-    render: (p: any, a: any) => any;
-}): ScreenDefinition<P, A> {
-    return {
+export interface ScreenDefinition<P extends Schemas = Schemas, A extends Schemas = Schemas> extends ScreenOptions<P, A> {
+  [SCREEN_DEFINITION_SYMBOL]: true;
+}
+
+export function defineScreen<P extends Schemas, A extends Schemas>(def: ScreenOptions<P, A>): ScreenDefinition<P, A> {
+  return {
     ...def,
     [SCREEN_DEFINITION_SYMBOL]: true,
-    } as ScreenDefinition<P, A>;
+  };
 }
 
 export function isScreenDefinition(x: unknown): x is ScreenDefinition {
-    return (
-    typeof x === "object" &&
-    x !== null &&
-    SCREEN_DEFINITION_SYMBOL in x &&
-    (x as Record<symbol, unknown>)[SCREEN_DEFINITION_SYMBOL] === true
-    );
+  if (typeof x !== "object" || x === null) return false;
+
+  return (x as Record<symbol, unknown>)[SCREEN_DEFINITION_SYMBOL] === true;
 }

@@ -1,6 +1,6 @@
 import { Limits, type ValidationErrorCode } from "./index";
 import { itemScopeOf, resolvePath, type ResolvedPath } from "./path";
-import type { TypeSchema } from "./types";
+import type { AssetInfo, TypeSchema } from "./types";
 
 export interface ValidationError {
   code: ValidationErrorCode;
@@ -12,18 +12,23 @@ export type ValidationResultErr = { ok: false; error: ValidationError };
 export type ValidationResult = ValidationResultOk | ValidationResultErr;
 
 type Scope = Record<string, TypeSchema>;
+type Assets = Record<string, AssetInfo>;
 
 const OK: ValidationResultOk = { ok: true };
 const ID_PATTERN = /^[a-z0-9_-]+:[a-z0-9_/-]+$/;
 const COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
-const KINDS = new Set(["string", "int", "long", "double", "bool", "item", "list", "object"]);
+const KINDS = new Set(["string", "int", "long", "double", "bool", "item", "asset", "list", "object"]);
+const HASH_PATTERN = /^[0-9a-f]{64}$/;
+const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/gif"]);
+const FONT_TYPES = new Set(["font/ttf", "font/otf"]);
 const DEFAULTABLE_KINDS = new Set(["string", "int", "long", "double", "bool"]);
 const MATCHABLE_KINDS = new Set(["string", "int", "long", "bool"]);
 
 const ALLOWED_PROPS: Record<string, Set<string>> = {
   column: new Set(["gap", "padding", "align", "justify", "width", "height"]),
   row: new Set(["gap", "padding", "align", "justify", "width", "height"]),
-  text: new Set(["value", "color", "align", "shadow"]),
+  text: new Set(["value", "color", "font", "align", "shadow"]),
+  image: new Set(["src", "width", "height"]),
   item: new Set(["value", "size"]),
   button: new Set(["action", "payload", "disabled"]),
   list: new Set(["source"]),
@@ -70,7 +75,66 @@ export function validateContract(json: unknown, options?: { sourceBytes?: number
   const actionsCheck = validateSchemas(contract.actions, "actions", false);
   if (!actionsCheck.ok) return actionsCheck;
 
-  return new NodeValidator(contract.actions).validateNode(contract.root, "root", contract.properties, 0, undefined);
+  const assets = contract.assets ?? {};
+  const assetNames = contract.assetNames ?? {};
+  if (!isObject(assets)) return fail("UNKNOWN_SCHEMA_VERSION", "assets");
+  if (!isObject(assetNames)) return fail("UNKNOWN_SCHEMA_VERSION", "assetNames");
+
+  const assetsCheck = validateAssets(assets, assetNames);
+  if (!assetsCheck.ok) return assetsCheck;
+
+  const validator = new NodeValidator(contract.actions, assets);
+  return validator.validateNode(contract.root, "root", contract.properties, 0, undefined);
+}
+
+// Table-wide checks come first, so a malformed or oversized table is reported as a whole before any single entry.
+function validateAssets(assets: Record<string, unknown>, assetNames: Record<string, unknown>): ValidationResult {
+  const hashes = Object.keys(assets);
+  if (!hashes.every((hash) => HASH_PATTERN.test(hash))) return fail("INVALID_ASSET_HASH", "assets");
+  if (hashes.length > Limits.MAX_ASSETS) return fail("LIMIT_EXCEEDED", "assets");
+
+  const totalBytes = Object.values(assets).reduce<number>((sum, info: any) => sum + (Number(info?.bytes) || 0), 0);
+  if (totalBytes > Limits.MAX_TOTAL_ASSET_BYTES) return fail("LIMIT_EXCEEDED", "assets");
+
+  for (const [hash, info] of Object.entries(assets)) {
+    const result = validateAssetInfo(info, `assets.${hash}`);
+    if (!result.ok) return result;
+  }
+
+  for (const [name, hash] of Object.entries(assetNames)) {
+    if (typeof hash !== "string" || !(hash in assets)) return fail("UNDECLARED_ASSET", `assetNames.${name}`);
+  }
+
+  return OK;
+}
+
+function validateAssetInfo(info: unknown, path: string): ValidationResult {
+  if (!isObject(info)) return fail("UNSUPPORTED_ASSET", path);
+
+  const { type, bytes } = info;
+  if (!IMAGE_TYPES.has(type) && !FONT_TYPES.has(type)) return fail("UNSUPPORTED_ASSET", path);
+  if (!isCount(bytes)) return fail("UNSUPPORTED_ASSET", path);
+  if (bytes > Limits.MAX_ASSET_BYTES) return fail("LIMIT_EXCEEDED", path);
+  if (!IMAGE_TYPES.has(type)) return OK;
+
+  const { width, height, frames } = info;
+  if (!isCount(width) || !isCount(height) || width === 0 || height === 0) return fail("UNSUPPORTED_ASSET", path);
+  if (width > Limits.MAX_IMAGE_DIMENSION || height > Limits.MAX_IMAGE_DIMENSION) return fail("LIMIT_EXCEEDED", path);
+  if (type !== "image/gif") return OK;
+
+  if (!isCount(frames) || frames === 0) return fail("UNSUPPORTED_ASSET", path);
+  if (frames > Limits.MAX_GIF_FRAMES) return fail("LIMIT_EXCEEDED", path);
+  if (width * height * 4 * frames > Limits.MAX_GIF_DECODED_BYTES) return fail("LIMIT_EXCEEDED", path);
+
+  return OK;
+}
+
+function isSize(value: unknown): boolean {
+  return typeof value === "number" || value === "fit" || value === "fill";
+}
+
+function isCount(value: unknown): value is number {
+  return Number.isInteger(value) && (value as number) >= 0;
 }
 
 function validateSchemas(schemas: Record<string, unknown>, path: string, allowDefault: boolean): ValidationResult {
@@ -109,7 +173,10 @@ function validateDefault(schema: TypeSchema, path: string, allowDefault: boolean
 class NodeValidator {
   private nodeCount = 0;
 
-  constructor(private readonly actions: Scope) {}
+  constructor(
+    private readonly actions: Scope,
+    private readonly assets: Assets,
+  ) {}
 
   validateNode(node: any, path: string, scope: Scope, depth: number, parentType: string | undefined): ValidationResult {
     this.nodeCount++;
@@ -152,6 +219,15 @@ class NodeValidator {
         return validateTextValue(value, path, scope);
       case "text.color":
         return validateColor(value, path, scope);
+      case "text.font":
+        return this.validateAssetRef(value, path, FONT_TYPES);
+      case "image.src":
+        return isBinding(value)
+          ? validateBinding(value, path, scope, (kind) => kind === "asset")
+          : this.validateAssetRef(value, path, IMAGE_TYPES);
+      case "image.width":
+      case "image.height":
+        return isSize(value) ? OK : fail("INVALID_PROP_TYPE", path);
       case "column.gap":
       case "column.padding":
       case "row.gap":
@@ -172,6 +248,16 @@ class NodeValidator {
       default:
         return OK;
     }
+  }
+
+  private validateAssetRef(value: unknown, path: string, acceptedTypes: Set<string>): ValidationResult {
+    if (!isAssetRef(value)) return fail("INVALID_PROP_TYPE", path);
+
+    const info = this.assets[value.$asset];
+    if (!info) return fail("UNDECLARED_ASSET", path);
+    if (!acceptedTypes.has(info.type)) return fail("ASSET_TYPE_MISMATCH", path);
+
+    return OK;
   }
 
   private validateAction(value: unknown, path: string): ValidationResult {
@@ -382,6 +468,10 @@ function exceedsDepth(value: unknown, maxDepth: number): boolean {
 
 function isBinding(value: unknown): value is { $bind: string } {
   return isObject(value) && typeof value.$bind === "string" && Object.keys(value).length === 1;
+}
+
+function isAssetRef(value: unknown): value is { $asset: string } {
+  return isObject(value) && typeof value.$asset === "string" && Object.keys(value).length === 1;
 }
 
 function isObject(value: unknown): value is Record<string, any> {
