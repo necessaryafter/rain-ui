@@ -501,23 +501,6 @@ If you are interested in the project, following the repository and experimenting
 
 ---
 
-# Contributing
-
-> **We are not accepting contributions at the moment.** Contributions will open after the first version of Rain UI is released.
-
-Rain UI is still early enough that architectural feedback can be particularly valuable.
-
-Before making substantial changes, consider reading:
-
-* [`AGENTS.md`](./AGENTS.md)
-* [`CODE_STYLE.md`](./CODE_STYLE.md)
-* [`docs/`](./docs/)
-* [`specs/`](./specs/)
-
-For changes to the protocol or security model, documenting the design and threat model is especially important.
-
----
-
 # License
 
 Rain UI is licensed under the **Apache License 2.0**.
