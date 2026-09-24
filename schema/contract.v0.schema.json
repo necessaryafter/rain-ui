@@ -14,7 +14,7 @@
     "schemaVersion": {
       "type": "integer",
       "const": 0,
-      "description": "Contract schema version \u2014 only 0 is supported in M1"
+      "description": "Contract schema version — only 0 is supported in M1"
     },
     "id": {
       "type": "string",
@@ -39,6 +39,25 @@
     "root": {
       "$ref": "#/definitions/ComponentNode",
       "description": "Root component node of the screen's layout tree"
+    },
+    "assets": {
+      "type": "object",
+      "maxProperties": 256,
+      "propertyNames": {
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/AssetInfo"
+      },
+      "description": "Assets the screen can download, keyed by the lowercase hex sha256 of their bytes; absent when there are none"
+    },
+    "assetNames": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "description": "Names a t.asset() property can carry, mapped to hashes in assets; absent when there are none"
     }
   },
   "definitions": {
@@ -61,6 +80,9 @@
         },
         {
           "$ref": "#/definitions/TypeItem"
+        },
+        {
+          "$ref": "#/definitions/TypeAsset"
         },
         {
           "$ref": "#/definitions/TypeList"
@@ -188,6 +210,23 @@
       },
       "additionalProperties": false
     },
+    "TypeAsset": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "asset"
+        },
+        "optional": {
+          "const": true,
+          "description": "The value may be absent or null"
+        }
+      },
+      "additionalProperties": false,
+      "description": "The name of one of the screen's assets (see assetNames), never a hash or a URL"
+    },
     "TypeList": {
       "type": "object",
       "required": [
@@ -246,6 +285,7 @@
             "row",
             "text",
             "item",
+            "image",
             "button",
             "list",
             "show",
@@ -269,6 +309,46 @@
         }
       },
       "additionalProperties": false
+    },
+    "AssetInfo": {
+      "type": "object",
+      "required": [
+        "type",
+        "bytes"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "image/png",
+            "image/jpeg",
+            "image/gif",
+            "font/ttf",
+            "font/otf"
+          ]
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8388608
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "frames": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 512
+        }
+      },
+      "additionalProperties": false,
+      "description": "An asset table entry; images carry width and height, GIFs also frames"
     }
   }
 }
