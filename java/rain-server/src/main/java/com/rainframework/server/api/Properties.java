@@ -1,4 +1,4 @@
-package com.rainframework.ui.server;
+package com.rainframework.server.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jspecify.annotations.Nullable;

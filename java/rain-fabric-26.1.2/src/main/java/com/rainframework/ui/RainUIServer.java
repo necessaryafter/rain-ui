@@ -7,10 +7,11 @@ import com.rainframework.ui.fabric.RainPayloads;
 import com.rainframework.ui.protocol.packet.PacketDecodeException;
 import com.rainframework.ui.protocol.packet.PacketType;
 import com.rainframework.ui.protocol.packet.RainPackets;
-import com.rainframework.ui.server.ContractRegistry;
-import com.rainframework.ui.server.PlayerRef;
-import com.rainframework.ui.server.RainServer;
-import com.rainframework.ui.server.http.ContentHttpServer;
+import com.rainframework.server.api.ContractRegistry;
+import com.rainframework.server.api.PlayerRef;
+import com.rainframework.server.api.RainServer;
+import com.rainframework.server.demo.ShopDemo;
+import com.rainframework.server.http.ContentHttpServer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -33,26 +34,33 @@ public final class RainUIServer implements ModInitializer {
     private static final Logger LOGGER = LoggerFactory.getLogger("rain-ui");
 
     private @Nullable ContentHttpServer http;
+    private final ShopDemo shopDemo = new ShopDemo(RainUI.interactions());
 
     @Override
     public void onInitialize() {
         RainPayloads.register();
 
-        receive(RainPackets.CLIENT_HELLO, (player, packet) -> RainUI.server().onClientHello(player, packet));
+        receive(RainPackets.CLIENT_HELLO, (player, packet) -> {
+            LOGGER.info("Rain UI ClientHello protocol {} from {}", packet.protocolVersion(), player.name());
+            RainUI.server().onClientHello(player, packet);
+        });
         receive(RainPackets.INTERACT, (player, packet) -> RainUI.server().onInteract(player, packet));
         receive(RainPackets.SCREEN_CLOSED, (player, packet) -> RainUI.server().onScreenClosed(player, packet));
         receive(RainPackets.SCREEN_FAILED, (player, packet) -> RainUI.server().onScreenFailed(player, packet));
 
         final var samples = FabricLoader.getInstance().getConfigDir().resolve("rain-ui").resolve("samples");
         CommandRegistrationCallback.EVENT.register((dispatcher, registries, environment) ->
-                new RainCommands(samples).register(dispatcher));
+                new RainCommands(samples, shopDemo).register(dispatcher));
 
         ServerLifecycleEvents.SERVER_STARTING.register(this::start);
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> stop());
         // JOIN fires inside placeNewPlayer, before the player is in the player list that sends are resolved against,
         // so the hello goes out on the next tick.
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> server.execute(() ->
-                RainUI.server().onPlayerJoin(RainUI.player(handler.getPlayer()))));
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> server.execute(() -> {
+            final var player = RainUI.player(handler.getPlayer());
+            LOGGER.info("Rain UI join for {}", player.name());
+            RainUI.server().onPlayerJoin(player);
+        }));
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
                 RainUI.server().onPlayerLeave(RainUI.player(handler.getPlayer())));
     }

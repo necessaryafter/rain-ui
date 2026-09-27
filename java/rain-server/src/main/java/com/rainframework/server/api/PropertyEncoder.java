@@ -1,9 +1,11 @@
-package com.rainframework.ui.server;
+package com.rainframework.server.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.rainframework.server.api.adapter.Adapter;
+import com.rainframework.server.api.adapter.Adapters;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 

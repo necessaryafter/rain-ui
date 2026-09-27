@@ -12,6 +12,8 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Base64;
 import java.util.HashMap;
@@ -19,6 +21,8 @@ import java.util.Map;
 
 /** Draws a Rain screen from the client core's draw commands and forwards clicks and closing to the session. */
 final class RainScreen extends Screen {
+    private static final Logger LOGGER = LoggerFactory.getLogger("rain-ui");
+
     private final ScreenController controller;
     private final ClientSession session;
     private final AssetTextures textures;
@@ -150,7 +154,9 @@ final class RainScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0) {
-            session.click(mouseX, mouseY);
+            final var sent = session.click(mouseX, mouseY);
+            LOGGER.info("Rain UI click on {} at ({}, {}): {}", controller.getScreenId(), mouseX, mouseY,
+                    sent ? "sent" : "no enabled button hit");
         }
 
         return true;

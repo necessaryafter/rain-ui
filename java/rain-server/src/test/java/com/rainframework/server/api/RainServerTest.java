@@ -1,4 +1,4 @@
-package com.rainframework.ui.server;
+package com.rainframework.server.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rainframework.ui.protocol.packet.ClientHello;
@@ -14,6 +14,8 @@ import com.rainframework.ui.protocol.packet.ScreenFailed;
 import com.rainframework.ui.protocol.packet.ScreenFailureReason;
 import com.rainframework.ui.protocol.packet.ServerHello;
 import com.rainframework.ui.protocol.packet.UpdateScreen;
+import com.rainframework.server.api.event.InteractionResult;
+import com.rainframework.server.demo.ShopDemo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -314,6 +316,22 @@ class RainServerTest {
 
         buy(ASH, first.getId(), 0, "pikachu");
         assertEquals(0, purchases.get());
+    }
+
+    @Test
+    void shopDemoLocksThePurchasedItemOnlyForTheBuyer() {
+        final var demo = new ShopDemo(server.getInteractions());
+        final var ash = demo.open(server, ASH, shop(true));
+        final var misty = demo.open(server, MISTY, shop(true));
+        platform.sent.clear();
+
+        buy(ASH, ash.getId(), ash.getRevision(), "pikachu");
+
+        assertEquals(1, ash.getRevision());
+        assertEquals(0, misty.getRevision());
+        assertTrue(ash.getProperties().at("/items/0/locked").asBoolean());
+        assertFalse(misty.getProperties().at("/items/0/locked").asBoolean());
+        assertEquals(1, platform.count(RainPackets.UPDATE_SCREEN));
     }
 
     private void join(PlayerRef player) {

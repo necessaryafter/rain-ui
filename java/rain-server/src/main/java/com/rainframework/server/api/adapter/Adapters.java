@@ -1,4 +1,4 @@
-package com.rainframework.ui.server;
+package com.rainframework.server.api.adapter;
 
 import org.jspecify.annotations.Nullable;
 
@@ -16,7 +16,7 @@ public final class Adapters {
     }
 
     @SuppressWarnings("unchecked")
-    @Nullable Adapter<Object> find(Class<?> type) {
+    public @Nullable Adapter<Object> find(Class<?> type) {
         final var pending = new ArrayDeque<Class<?>>();
         pending.add(type);
 

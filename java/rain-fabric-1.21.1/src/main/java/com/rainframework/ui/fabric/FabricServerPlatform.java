@@ -1,8 +1,8 @@
 package com.rainframework.ui.fabric;
 
 import com.rainframework.ui.protocol.packet.PacketType;
-import com.rainframework.ui.server.PlayerRef;
-import com.rainframework.ui.server.ServerPlatform;
+import com.rainframework.server.api.PlayerRef;
+import com.rainframework.server.api.ServerPlatform;
 import io.netty.buffer.Unpooled;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.RegistryFriendlyByteBuf;

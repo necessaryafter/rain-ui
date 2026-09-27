@@ -1,4 +1,4 @@
-package com.rainframework.ui.server;
+package com.rainframework.server.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rainframework.ui.protocol.Contract;

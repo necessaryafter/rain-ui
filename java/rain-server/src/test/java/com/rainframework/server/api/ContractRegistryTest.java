@@ -1,4 +1,4 @@
-package com.rainframework.ui.server;
+package com.rainframework.server.api;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;

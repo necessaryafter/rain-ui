@@ -1,13 +1,13 @@
 package com.rainframework.ui;
 
-import com.rainframework.ui.server.Adapter;
-import com.rainframework.ui.server.Adapters;
-import com.rainframework.ui.server.Event;
-import com.rainframework.ui.server.InteractionEvent;
-import com.rainframework.ui.server.PlayerRef;
-import com.rainframework.ui.server.Properties;
-import com.rainframework.ui.server.RainServer;
-import com.rainframework.ui.server.ScreenInstance;
+import com.rainframework.server.api.PlayerRef;
+import com.rainframework.server.api.Properties;
+import com.rainframework.server.api.RainServer;
+import com.rainframework.server.api.ScreenInstance;
+import com.rainframework.server.api.adapter.Adapter;
+import com.rainframework.server.api.adapter.Adapters;
+import com.rainframework.server.api.event.Event;
+import com.rainframework.server.api.event.InteractionEvent;
 import net.minecraft.server.level.ServerPlayer;
 import org.jspecify.annotations.Nullable;
 
