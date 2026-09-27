@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 0,
+  "id": "test:m3-composition",
+  "properties": {
+    "accent": { "kind": "string" },
+    "barWidth": { "kind": "int" },
+    "icon": { "kind": "asset" },
+    "items": { "kind": "list", "of": { "kind": "object", "fields": { "id": { "kind": "string" }, "name": { "kind": "string" } } } }
+  },
+  "actions": { "test:select": { "kind": "object", "fields": { "query": { "kind": "string" }, "id": { "kind": "string" } } } },
+  "assets": {
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": { "type": "image/png", "bytes": 1, "width": 1, "height": 1 },
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": { "type": "font/ttf", "bytes": 1 }
+  },
+  "assetNames": { "fire": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
+  "root": {
+    "type": "box", "key": "screen", "props": { "width": "fill", "height": "fill", "padding": { "top": 4, "right": 8, "bottom": 4, "left": 8 }, "background": "#123", "opacity": 0.75, "borderWidth": 1, "borderColor": { "$bind": "accent" }, "borderRadius": 3, "overflow": "hidden" }, "children": [
+      { "type": "stack", "props": { "width": "fill", "height": 120, "align": "center", "justify": "center" }, "children": [
+        { "type": "image", "props": { "src": { "$asset": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }, "width": "fill", "height": "fill", "opacity": 0.5 }, "children": [] },
+        { "type": "box", "props": { "position": "absolute", "left": 10, "top": 10, "width": 80, "height": 40, "rotate": -3, "scale": 1.1, "shape": [[0,1500],[10000,0],[9700,8000],[300,10000]] }, "children": [
+          { "type": "text", "props": { "value": "Hello\nRain", "font": { "$asset": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" }, "fontSize": 16, "fontWeight": "bold", "color": "#fff", "textAlign": "center", "lineHeight": 18, "letterSpacing": 1, "strokeColor": "#000", "strokeWidth": 1 }, "children": [] }
+        ] }
+      ] },
+      { "type": "scroll", "props": { "direction": "both", "width": 180, "height": 120 }, "children": [
+        { "type": "grid", "props": { "cellWidth": 40, "cellHeight": 40, "gap": 4, "padding": 0, "columns": 3, "width": "fill" }, "children": [
+          { "type": "list", "props": { "source": { "$bind": "items" } }, "children": [
+            { "type": "button", "key": { "$bind": "id" }, "props": { "action": "test:select", "payload": { "id": { "$bind": "id" }, "query": { "$input": "query" } } }, "children": [ { "type": "text", "props": { "value": { "$bind": "name" } }, "children": [] } ] }
+          ] }
+        ] }
+      ] },
+      { "type": "input", "props": { "id": "query", "value": "", "placeholder": "Search", "multiline": true, "maxLength": 1024, "width": 160, "height": 72 }, "children": [] },
+      { "type": "tabs", "props": { "defaultTab": "details" }, "children": [
+        { "type": "tab", "props": { "id": "details", "label": "Details" }, "children": [ { "type": "text", "props": { "value": "Details" }, "children": [] } ] },
+        { "type": "tab", "props": { "id": "other", "label": "Other" }, "children": [ { "type": "text", "props": { "value": "Other" }, "children": [] } ] }
+      ] }
+    ]
+  }
+}

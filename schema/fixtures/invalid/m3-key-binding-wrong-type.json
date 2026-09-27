@@ -1,0 +1,1 @@
+{"schemaVersion":0,"id":"test:m3","properties":{"flag":{"kind":"bool"}},"actions":{},"root":{"type":"box","key":{"$bind":"flag"},"props":{},"children":[]}}

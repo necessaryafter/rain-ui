@@ -1,0 +1,1 @@
+{"schemaVersion":0,"id":"test:m3","properties":{},"actions":{},"root":{"type":"tabs","props":{"defaultTab":"a"},"children":[{"type":"tab","props":{"id":"a","label":"A"},"children":[]},{"type":"tab","props":{"id":"a","label":"Again"},"children":[]}]}}

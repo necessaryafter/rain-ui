@@ -1,0 +1,1 @@
+{"schemaVersion":0,"id":"test:m3","properties":{},"actions":{"test:go":{"kind":"object","fields":{"query":{"kind":"string"}}}},"root":{"type":"button","props":{"action":"test:go","payload":{"query":{"$input":"query"}}},"children":[]}}

@@ -10,6 +10,7 @@ build/
 *.ipr
 
 references/*
+/docs/plans/
 
 # Minecraft/Loom
 run/
