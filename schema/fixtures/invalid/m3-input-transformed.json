@@ -1,0 +1,1 @@
+{"schemaVersion":0,"id":"test:m3","properties":{},"actions":{},"root":{"type":"box","props":{"scale":2},"children":[{"type":"input","props":{"id":"q"},"children":[]}]}}
