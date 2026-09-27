@@ -1,4 +1,4 @@
-package com.rainframework.ui.server;
+package com.rainframework.server.api.event;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -12,7 +12,7 @@ public final class Event<T> {
         listeners.add(listener);
     }
 
-    void fire(T event) {
+    public void fire(T event) {
         for (final var listener : listeners) {
             listener.accept(event);
         }

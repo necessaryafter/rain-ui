@@ -1,6 +1,6 @@
-package com.rainframework.ui.server.http;
+package com.rainframework.server.http;
 
-import com.rainframework.ui.server.ContractRegistry;
+import com.rainframework.server.api.ContractRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

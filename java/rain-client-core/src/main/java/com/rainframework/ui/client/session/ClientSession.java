@@ -124,15 +124,18 @@ public final class ClientSession {
     }
 
     /** Called by the version module for a click on the open screen. */
-    public void click(double x, double y) {
+    public boolean click(double x, double y) {
         if (current == null) {
-            return;
+            return false;
         }
 
         final Interact interact = current.click(x, y);
-        if (interact != null) {
-            connection.send(RainPackets.INTERACT, interact);
+        if (interact == null) {
+            return false;
         }
+
+        connection.send(RainPackets.INTERACT, interact);
+        return true;
     }
 
     /** Called by the version module when the player closes the screen (ESC). */

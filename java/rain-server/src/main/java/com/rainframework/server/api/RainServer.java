@@ -1,4 +1,4 @@
-package com.rainframework.ui.server;
+package com.rainframework.server.api;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.rainframework.ui.protocol.Contract;
@@ -17,6 +17,11 @@ import com.rainframework.ui.protocol.packet.UpdateScreen;
 import com.rainframework.ui.protocol.payload.Payload;
 import com.rainframework.ui.protocol.validation.PayloadValidator;
 import com.rainframework.ui.protocol.validation.PropertiesValidator;
+import com.rainframework.server.api.adapter.Adapters;
+import com.rainframework.server.api.event.Event;
+import com.rainframework.server.api.event.InteractionEvent;
+import com.rainframework.server.api.event.InteractionResult;
+import com.rainframework.server.internal.RateLimiter;
 import lombok.Builder;
 import lombok.Getter;
 import org.jspecify.annotations.Nullable;

@@ -1,5 +1,7 @@
-package com.rainframework.ui.server;
+package com.rainframework.server.api.event;
 
+import com.rainframework.server.api.PlayerRef;
+import com.rainframework.server.api.ScreenInstance;
 import com.rainframework.ui.protocol.payload.Payload;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

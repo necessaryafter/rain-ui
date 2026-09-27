@@ -9,8 +9,9 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.rainframework.ui.RainUI;
-import com.rainframework.ui.server.InvalidPropertiesException;
-import com.rainframework.ui.server.Properties;
+import com.rainframework.server.api.InvalidPropertiesException;
+import com.rainframework.server.api.Properties;
+import com.rainframework.server.demo.ShopDemo;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -32,9 +33,11 @@ public final class RainCommands {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final Path samples;
+    private final ShopDemo shopDemo;
 
-    public RainCommands(Path samples) {
+    public RainCommands(Path samples, ShopDemo shopDemo) {
         this.samples = samples;
+        this.shopDemo = shopDemo;
     }
 
     public void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -55,7 +58,11 @@ public final class RainCommands {
 
         try {
             final var json = Files.exists(sample) ? MAPPER.readTree(sample.toFile()) : MAPPER.createObjectNode();
-            if (RainUI.open(player, screenId, Properties.fromJson(withItems(json))) == null) {
+            final var properties = Properties.fromJson(withItems(json));
+            final var instance = screenId.equals(ShopDemo.SCREEN_ID)
+                    ? shopDemo.open(RainUI.server(), RainUI.player(player), properties)
+                    : RainUI.open(player, screenId, properties);
+            if (instance == null) {
                 source.sendFailure(Component.literal("You have no compatible Rain UI client installed"));
                 return 0;
             }

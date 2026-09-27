@@ -1,4 +1,4 @@
-package com.rainframework.ui.server;
+package com.rainframework.server.api;
 
 import com.rainframework.ui.protocol.validation.ValidationError;
 import lombok.Getter;

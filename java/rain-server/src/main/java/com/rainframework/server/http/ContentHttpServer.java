@@ -1,6 +1,6 @@
-package com.rainframework.ui.server.http;
+package com.rainframework.server.http;
 
-import com.rainframework.ui.server.ContractRegistry;
+import com.rainframework.server.api.ContractRegistry;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 

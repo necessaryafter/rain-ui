@@ -47,8 +47,16 @@ public final class RainUIClient implements ClientModInitializer {
             active.onServerHello(hello);
         });
         receive(RainPackets.OPEN_SCREEN, ClientSession::onOpenScreen);
-        receive(RainPackets.UPDATE_SCREEN, ClientSession::onUpdateScreen);
-        receive(RainPackets.INTERACTION_REJECTED, ClientSession::onInteractionRejected);
+        receive(RainPackets.UPDATE_SCREEN, (active, update) -> {
+            LOGGER.info("Rain UI received update for instance {} at revision {}", update.instanceId(),
+                    update.revision());
+            active.onUpdateScreen(update);
+        });
+        receive(RainPackets.INTERACTION_REJECTED, (active, rejected) -> {
+            LOGGER.info("Rain UI interaction rejected for instance {} at revision {}", rejected.instanceId(),
+                    rejected.revision());
+            active.onInteractionRejected(rejected);
+        });
         receive(RainPackets.CLOSE_SCREEN, ClientSession::onCloseScreen);
 
         // Created once, before any connection: a ServerHello can arrive before the client's join event fires.

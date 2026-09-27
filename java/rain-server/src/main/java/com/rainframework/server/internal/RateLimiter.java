@@ -1,9 +1,9 @@
-package com.rainframework.ui.server;
+package com.rainframework.server.internal;
 
 import java.util.function.LongSupplier;
 
 /** A token bucket: up to {@code perSecond} interactions in a burst, refilled at {@code perSecond} per second. */
-final class RateLimiter {
+public final class RateLimiter {
     private static final long NANOS_PER_SECOND = 1_000_000_000L;
 
     private final int perSecond;
@@ -11,14 +11,14 @@ final class RateLimiter {
     private double tokens;
     private long lastRefill;
 
-    RateLimiter(int perSecond, LongSupplier nanoClock) {
+    public RateLimiter(int perSecond, LongSupplier nanoClock) {
         this.perSecond = perSecond;
         this.nanoClock = nanoClock;
         this.tokens = perSecond;
         this.lastRefill = nanoClock.getAsLong();
     }
 
-    synchronized boolean tryAcquire() {
+    public synchronized boolean tryAcquire() {
         final var now = nanoClock.getAsLong();
         tokens = Math.min(perSecond, tokens + (double) (now - lastRefill) * perSecond / NANOS_PER_SECOND);
         lastRefill = now;

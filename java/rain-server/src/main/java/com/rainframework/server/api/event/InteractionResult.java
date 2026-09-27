@@ -1,4 +1,6 @@
-package com.rainframework.ui.server;
+package com.rainframework.server.api.event;
+
+import com.rainframework.server.api.Properties;
 
 /** The one answer the server gives to an interaction. */
 public sealed interface InteractionResult {
