@@ -1,3 +1,5 @@
+import * as path from "path";
+
 import { readAsset } from "./assets";
 
 const JSX_FACTORY = "__rain_h";
@@ -10,8 +12,8 @@ const PRELUDE =
   `import { jsx as __rain_jsx, Fragment as ${JSX_FRAGMENT} } from "@rain-ui/core/jsx-runtime";` +
   `const ${JSX_FACTORY} = (type, props, ...children) => {` +
   `const { key, ...rest } = props ?? {};` +
-  `if (children.length === 0) return __rain_jsx(type, rest);` +
-  `return __rain_jsx(type, { ...rest, children: children.length === 1 ? children[0] : children });` +
+  `if (children.length === 0) return __rain_jsx(type, rest, key);` +
+  `return __rain_jsx(type, { ...rest, children: children.length === 1 ? children[0] : children }, key);` +
   `};`;
 
 const transpiler = new Bun.Transpiler({
@@ -34,6 +36,11 @@ export function registerScreenLoaders(): void {
   Bun.plugin({
     name: "rain-jsx",
     setup(build) {
+      build.onResolve({ filter: /^@rain-ui\/core(?:\/.*)?$/ }, (args) => {
+        const suffix = args.path.slice("@rain-ui/core".length);
+        const file = suffix === "" ? "index.ts" : `${suffix.slice(1)}.ts`;
+        return { path: path.join(import.meta.dir, "../../core", file) };
+      });
       build.onLoad({ filter: /\.(tsx|jsx)$/ }, async ({ path }) => ({
         contents: PRELUDE + transpiler.transformSync(await Bun.file(path).text()),
         loader: "js",

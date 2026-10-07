@@ -215,7 +215,7 @@ public final class ContractParser {
         final var props = extractRequiredProps(node, path);
         final var children = extractChildren(node, path);
 
-        return new ComponentNode(type, props, children);
+        return new ComponentNode(type, props, children, node.get("key"));
     }
 
     private String extractRequiredString(JsonNode node, String field, String path) throws ParseException {

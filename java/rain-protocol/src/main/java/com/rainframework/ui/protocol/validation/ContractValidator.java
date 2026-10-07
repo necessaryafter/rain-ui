@@ -8,6 +8,7 @@ import com.rainframework.ui.protocol.Limits;
 import com.rainframework.ui.protocol.TypeSchema;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,17 +18,28 @@ import java.util.regex.Pattern;
 
 public final class ContractValidator {
     private static final Pattern ID_PATTERN = Pattern.compile("^[a-z0-9_-]+:[a-z0-9_/-]+$");
-    private static final Pattern COLOR_PATTERN = Pattern.compile("^#[0-9A-Fa-f]{6}$");
+    private static final Pattern COLOR_PATTERN = Pattern.compile("^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$");
     private static final Pattern HASH_PATTERN = Pattern.compile("^[0-9a-f]{64}$");
     private static final Set<String> IMAGE_TYPES = Set.of("image/png", "image/jpeg", "image/gif");
     private static final Set<String> FONT_TYPES = Set.of("font/ttf", "font/otf");
     private static final Map<String, Set<String>> COMPONENT_PROPS = Map.ofEntries(
-            Map.entry("column", Set.of("gap", "padding", "align", "justify", "width", "height")),
-            Map.entry("row", Set.of("gap", "padding", "align", "justify", "width", "height")),
-            Map.entry("text", Set.of("value", "color", "font", "align", "shadow")),
-            Map.entry("image", Set.of("src", "width", "height")),
+            Map.entry("column", layoutProps()),
+            Map.entry("row", layoutProps()),
+            Map.entry("box", layoutProps()),
+            Map.entry("stack", layoutProps()),
+            Map.entry("grid", withLayout("cellWidth", "cellHeight", "columns")),
+            Map.entry("scroll", withLayout("direction")),
+            Map.entry("text", Set.of(
+                    "value", "color", "font", "align", "shadow", "fontSize", "fontWeight", "textAlign",
+                    "lineHeight", "letterSpacing", "strokeColor", "strokeWidth")),
+            Map.entry("image", withLayout("src")),
             Map.entry("item", Set.of("value", "size")),
-            Map.entry("button", Set.of("action", "payload", "disabled")),
+            Map.entry("button", withLayout("action", "payload", "disabled")),
+            Map.entry("input", Set.of(
+                    "id", "value", "placeholder", "multiline", "maxLength", "width", "height", "minWidth",
+                    "minHeight", "maxWidth", "maxHeight", "margin", "position", "top", "right", "bottom", "left")),
+            Map.entry("tabs", Set.of("defaultTab")),
+            Map.entry("tab", Set.of("id", "label")),
             Map.entry("list", Set.of("source")),
             Map.entry("show", Set.of("when")),
             Map.entry("match", Set.of("value")),
@@ -35,11 +47,27 @@ public final class ContractValidator {
             Map.entry("default", Set.of()),
             Map.entry("fallback", Set.of()));
 
+    private static Set<String> layoutProps() {
+        return Set.of(
+                "width", "height", "minWidth", "minHeight", "maxWidth", "maxHeight", "padding", "margin", "gap",
+                "position", "top", "right", "bottom", "left", "align", "justify", "grow", "shrink", "background",
+                "opacity", "overflow", "zIndex", "borderWidth", "borderColor", "borderRadius", "rotate", "scale",
+                "scaleX", "scaleY", "skewX", "skewY", "shape");
+    }
+
+    private static Set<String> withLayout(String... extra) {
+        final var props = new HashSet<>(layoutProps());
+        Collections.addAll(props, extra);
+
+        return Set.copyOf(props);
+    }
+
     // Components that only exist as a slot of a specific parent.
     private static final Map<String, String> SLOT_PARENTS = Map.of(
             "case", "match",
             "default", "match",
-            "fallback", "show");
+            "fallback", "show",
+            "tab", "tabs");
 
     public ValidationResult validate(Contract contract) {
         final var basicChecks = validateBasicConstraints(contract);
@@ -62,8 +90,10 @@ public final class ContractValidator {
             return assetsCheck;
         }
 
-        final var validator = new NodeValidator(contract.actions(), contract.assets());
-        return validator.validateNode(contract.root(), "root", contract.properties(), 0, null);
+        final var screenInputs = collectInputIds(contract.root());
+        final var validator = new NodeValidator(contract.actions(), contract.assets(), screenInputs);
+
+        return validator.validateNode(contract.root(), "root", contract.properties(), 0, null, screenInputs);
     }
 
     // Table-wide checks come first, so a malformed or oversized table is reported as a whole before any single entry.
@@ -149,10 +179,6 @@ public final class ContractValidator {
 
     private static boolean isPositive(Long value) {
         return value != null && value > 0;
-    }
-
-    private static boolean isSize(JsonNode value) {
-        return value.isNumber() || value.isTextual() && (value.asText().equals("fit") || value.asText().equals("fill"));
     }
 
     private static boolean isAssetRef(JsonNode node) {
@@ -261,10 +287,151 @@ public final class ContractValidator {
         return node != null && node.isObject() && node.size() == 1 && node.path("$bind").isTextual();
     }
 
+    private static boolean isInputReference(JsonNode node) {
+        return node != null && node.isObject() && node.size() == 1 && node.path("$input").isTextual();
+    }
+
+    private static boolean positiveInteger(JsonNode value) {
+        return value != null && value.isIntegralNumber() && value.asLong() > 0;
+    }
+
+    private static boolean nonZero(JsonNode value) {
+        return value != null && value.isNumber() && value.asDouble() != 0;
+    }
+
+    private static boolean validPolygon(JsonNode value) {
+        if (value == null || !value.isArray() || value.size() < 3 || value.size() > 32) {
+            return false;
+        }
+
+        long area = 0;
+
+        for (int i = 0; i < value.size(); i++) {
+            final var point = value.get(i);
+            final var next = value.get((i + 1) % value.size());
+            if (!validPolygonPoint(point) || !validPolygonPoint(next)) {
+                return false;
+            }
+
+            if (point.get(0).asInt() == next.get(0).asInt()
+                    && point.get(1).asInt() == next.get(1).asInt()) {
+                return false;
+            }
+
+            area += (long) point.get(0).asInt() * next.get(1).asInt()
+                    - (long) next.get(0).asInt() * point.get(1).asInt();
+        }
+
+        if (area == 0) {
+            return false;
+        }
+
+        for (int i = 0; i < value.size(); i++) {
+            if (crossesLaterSegment(value, i)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean validPolygonPoint(JsonNode point) {
+        if (!point.isArray() || point.size() != 2) {
+            return false;
+        }
+
+        for (final var coordinate : point) {
+            if (!coordinate.isIntegralNumber() || !coordinate.canConvertToInt()
+                    || coordinate.asInt() < 0 || coordinate.asInt() > 10000) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean crossesLaterSegment(JsonNode points, int i) {
+        for (int j = i + 1; j < points.size(); j++) {
+            if (j == i + 1 || (i == 0 && j == points.size() - 1)) {
+                continue;
+            }
+
+            if (segmentsIntersect(
+                    points.get(i), points.get((i + 1) % points.size()),
+                    points.get(j), points.get((j + 1) % points.size()))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean segmentsIntersect(JsonNode a, JsonNode b, JsonNode c, JsonNode d) {
+        final var abC = orientation(a, b, c);
+        final var abD = orientation(a, b, d);
+        final var cdA = orientation(c, d, a);
+        final var cdB = orientation(c, d, b);
+
+        if (abC == 0 && onSegment(a, b, c)) {
+            return true;
+        }
+
+        if (abD == 0 && onSegment(a, b, d)) {
+            return true;
+        }
+
+        if (cdA == 0 && onSegment(c, d, a)) {
+            return true;
+        }
+
+        if (cdB == 0 && onSegment(c, d, b)) {
+            return true;
+        }
+
+        return (abC > 0) != (abD > 0) && (cdA > 0) != (cdB > 0);
+    }
+
+    private static long orientation(JsonNode a, JsonNode b, JsonNode c) {
+        return (long) (b.get(0).asInt() - a.get(0).asInt()) * (c.get(1).asInt() - a.get(1).asInt())
+                - (long) (b.get(1).asInt() - a.get(1).asInt()) * (c.get(0).asInt() - a.get(0).asInt());
+    }
+
+    private static boolean onSegment(JsonNode a, JsonNode b, JsonNode point) {
+        final var x = point.get(0).asInt();
+        final var y = point.get(1).asInt();
+
+        return x >= Math.min(a.get(0).asInt(), b.get(0).asInt())
+                && x <= Math.max(a.get(0).asInt(), b.get(0).asInt())
+                && y >= Math.min(a.get(1).asInt(), b.get(1).asInt())
+                && y <= Math.max(a.get(1).asInt(), b.get(1).asInt());
+    }
+
+    private static Set<String> collectInputIds(ComponentNode node) {
+        final var ids = new HashSet<String>();
+        collectInputIds(node, ids);
+        return ids;
+    }
+
+    private static void collectInputIds(ComponentNode node, Set<String> ids) {
+        if (node.type().equals("list")) {
+            return;
+        }
+
+        final var id = node.props().get("id");
+        if (node.type().equals("input") && id != null && id.isTextual()) {
+            ids.add(id.asText());
+        }
+
+        for (final var child : node.children()) {
+            collectInputIds(child, ids);
+        }
+    }
+
     @RequiredArgsConstructor
     private static class NodeValidator {
         private final Map<String, TypeSchema> actions;
         private final Map<String, AssetInfo> assets;
+        private final Set<String> screenInputs;
         private int nodeCount = 0;
 
         ValidationResult validateNode(
@@ -272,7 +439,8 @@ public final class ContractValidator {
                 String path,
                 Map<String, TypeSchema> scope,
                 int depth,
-                String parentType
+                String parentType,
+                Set<String> inputs
         ) {
             nodeCount++;
             if (nodeCount > Limits.MAX_NODES || depth > Limits.MAX_DEPTH) {
@@ -283,20 +451,54 @@ public final class ContractValidator {
                 return ValidationResult.fail(ValidationErrorCode.UNKNOWN_COMPONENT, path);
             }
 
+            final var keyCheck = validateKey(node.key(), path + ".key", scope);
+            if (!keyCheck.isValid()) {
+                return keyCheck;
+            }
+
             final var slotParent = SLOT_PARENTS.get(node.type());
             if (slotParent != null && !slotParent.equals(parentType)) {
                 return ValidationResult.fail(ValidationErrorCode.MISPLACED_COMPONENT, path);
             }
 
-            final var propsCheck = validateProps(node, path, scope);
+            final var propsCheck = validateProps(node, path, scope, inputs);
             if (!propsCheck.isValid()) {
                 return propsCheck;
             }
 
-            return validateChildren(node, path, scope, depth);
+            return validateChildren(node, path, scope, depth, inputs);
         }
 
-        private ValidationResult validateProps(ComponentNode node, String path, Map<String, TypeSchema> scope) {
+        private static ValidationResult validateKey(JsonNode key, String path, Map<String, TypeSchema> scope) {
+            if (key == null || key.isTextual() || key.isIntegralNumber()) {
+                return ValidationResult.ok();
+            }
+
+            if (!isBinding(key)) {
+                return ValidationResult.fail(ValidationErrorCode.INVALID_KEY, path);
+            }
+
+            final var resolved = ResolvedPath.resolve(scope, key.get("$bind").asText());
+            if (resolved == null) {
+                return ValidationResult.fail(ValidationErrorCode.UNDECLARED_BINDING, path);
+            }
+
+            final var schema = TypeSchema.unwrap(resolved.schema());
+            if (!(schema instanceof TypeSchema.StringType
+                    || schema instanceof TypeSchema.IntType
+                    || schema instanceof TypeSchema.LongType)) {
+                return ValidationResult.fail(ValidationErrorCode.BINDING_TYPE_MISMATCH, path);
+            }
+
+            return ValidationResult.ok();
+        }
+
+        private ValidationResult validateProps(
+                ComponentNode node,
+                String path,
+                Map<String, TypeSchema> scope,
+                Set<String> inputs
+        ) {
             final var allowed = COMPONENT_PROPS.get(node.type());
 
             for (final var entry : node.props().entrySet()) {
@@ -311,8 +513,133 @@ public final class ContractValidator {
                 }
             }
 
+            final var visualCheck = VisualPropValidator.validate(node, path, scope);
+            if (!visualCheck.isValid()) {
+                return visualCheck;
+            }
+
             if (node.type().equals("button") && node.props().containsKey("payload")) {
-                return validateButtonPayload(node, path + ".props.payload", scope);
+                final var inputsCheck = validateInputReferences(
+                        node.props().get("payload"), path + ".props.payload", inputs);
+                if (!inputsCheck.isValid()) {
+                    return inputsCheck;
+                }
+
+                final var payloadCheck = validateButtonPayload(node, path + ".props.payload", scope);
+                if (!payloadCheck.isValid()) {
+                    return payloadCheck;
+                }
+            }
+
+            if (node.type().equals("grid")) {
+                final var gridCheck = validateGridProps(node, path);
+                if (!gridCheck.isValid()) {
+                    return gridCheck;
+                }
+            }
+
+            final var direction = node.props().get("direction");
+            if (node.type().equals("scroll") && direction != null
+                    && !Set.of("vertical", "horizontal", "both").contains(direction.asText())) {
+                return ValidationResult.fail(ValidationErrorCode.INVALID_PROP_VALUE, path + ".props.direction");
+            }
+
+            final var maxLength = node.props().get("maxLength");
+            if (node.type().equals("input") && maxLength != null
+                    && (!positiveInteger(maxLength) || maxLength.asInt() > 4096)) {
+                return ValidationResult.fail(ValidationErrorCode.LIMIT_EXCEEDED, path + ".props.maxLength");
+            }
+
+            final var inputId = node.props().get("id");
+            if (node.type().equals("input")
+                    && (inputId == null || !inputId.isTextual() || inputId.asText().isEmpty())) {
+                return ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path + ".props.id");
+            }
+
+            final var defaultTab = node.props().get("defaultTab");
+            if (node.type().equals("tabs") && (defaultTab == null || !defaultTab.isTextual())) {
+                return ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path + ".props.defaultTab");
+            }
+
+            if (node.props().containsKey("shape") && node.props().containsKey("borderRadius")) {
+                return ValidationResult.fail(
+                        ValidationErrorCode.INVALID_PROP_COMBINATION, path + ".props.borderRadius");
+            }
+
+            if (node.props().containsKey("shape") && !validPolygon(node.props().get("shape"))) {
+                return ValidationResult.fail(ValidationErrorCode.INVALID_POLYGON, path + ".props.shape");
+            }
+
+            for (final var transform : List.of("rotate", "skewX", "skewY")) {
+                if (hasTransformValue(node.props().get(transform)) && containsClip(node)) {
+                    return ValidationResult.fail(
+                            ValidationErrorCode.UNSUPPORTED_COMBINATION, path + ".props." + transform);
+                }
+            }
+
+            for (final var transform : List.of("rotate", "scale", "skewX", "skewY")) {
+                if (hasTransformValue(node.props().get(transform)) && containsInput(node)) {
+                    return ValidationResult.fail(
+                            ValidationErrorCode.UNSUPPORTED_COMBINATION, path + ".props." + transform);
+                }
+            }
+
+            return ValidationResult.ok();
+        }
+
+        private ValidationResult validateGridProps(ComponentNode node, String path) {
+            final var props = node.props();
+            for (final var name : List.of("cellWidth", "cellHeight")) {
+                if (!props.containsKey(name)) {
+                    return ValidationResult.fail(ValidationErrorCode.INVALID_PROP_VALUE, path + ".props." + name);
+                }
+            }
+
+            final var columns = props.get("columns");
+            final var width = props.get("width");
+            if (columns == null && (width == null || (!width.isNumber() && !isBinding(width)
+                    && !width.asText().equals("fill")))) {
+                return ValidationResult.fail(ValidationErrorCode.INVALID_LAYOUT, path + ".props.columns");
+            }
+
+            return ValidationResult.ok();
+        }
+
+        private ValidationResult validateInputReferences(JsonNode value, String path, Set<String> inputs) {
+            if (isInputReference(value)) {
+                return inputs.contains(value.get("$input").asText())
+                        ? ValidationResult.ok()
+                        : ValidationResult.fail(ValidationErrorCode.UNDECLARED_INPUT, path);
+            }
+
+            if (value != null && value.isObject()) {
+                return validateObjectInputReferences(value, path, inputs);
+            }
+
+            if (value != null && value.isArray()) {
+                return validateArrayInputReferences(value, path, inputs);
+            }
+
+            return ValidationResult.ok();
+        }
+
+        private ValidationResult validateObjectInputReferences(JsonNode value, String path, Set<String> inputs) {
+            for (final var entry : value.properties()) {
+                final var result = validateInputReferences(entry.getValue(), path + "." + entry.getKey(), inputs);
+                if (!result.isValid()) {
+                    return result;
+                }
+            }
+
+            return ValidationResult.ok();
+        }
+
+        private ValidationResult validateArrayInputReferences(JsonNode value, String path, Set<String> inputs) {
+            for (int i = 0; i < value.size(); i++) {
+                final var result = validateInputReferences(value.get(i), path + "[" + i + "]", inputs);
+                if (!result.isValid()) {
+                    return result;
+                }
             }
 
             return ValidationResult.ok();
@@ -326,10 +653,10 @@ public final class ContractValidator {
                 case "image.src" -> isBinding(value)
                         ? validateBinding(value, path, scope, TypeSchema.AssetType.class::isInstance)
                         : validateAssetRef(value, path, IMAGE_TYPES);
-                case "image.width", "image.height" -> isSize(value)
+                case "input.value", "input.placeholder", "tab.label" -> value.isTextual()
                         ? ValidationResult.ok()
-                        : ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
-                case "column.gap", "column.padding", "row.gap", "row.padding" -> value.isNumber()
+                        : validateBinding(value, path, scope, TypeSchema.StringType.class::isInstance);
+                case "input.id", "tab.id", "tabs.defaultTab" -> value.isTextual()
                         ? ValidationResult.ok()
                         : ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, path);
                 case "item.value" -> validateBinding(value, path, scope, TypeSchema.ItemType.class::isInstance);
@@ -377,14 +704,35 @@ public final class ContractValidator {
                 ComponentNode node,
                 String path,
                 Map<String, TypeSchema> scope,
-                int depth
+                int depth,
+                Set<String> inputs
         ) {
             final var children = node.children();
+            final var literalKeys = new HashSet<String>();
+
+            for (int i = 0; i < children.size(); i++) {
+                final var key = children.get(i).key();
+                if (key == null || (!key.isTextual() && !key.isIntegralNumber())) {
+                    continue;
+                }
+
+                final var identity = key.getNodeType() + ":" + key.asText();
+                if (!literalKeys.add(identity)) {
+                    return ValidationResult.fail(ValidationErrorCode.DUPLICATE_KEY, path + ".children[" + i + "].key");
+                }
+            }
 
             if (node.type().equals("match")) {
                 final var slotsCheck = validateMatchSlots(node, children, path, scope);
                 if (!slotsCheck.isValid()) {
                     return slotsCheck;
+                }
+            }
+
+            if (node.type().equals("tabs")) {
+                final var tabsCheck = validateTabs(node, children, path);
+                if (!tabsCheck.isValid()) {
+                    return tabsCheck;
                 }
             }
 
@@ -397,13 +745,75 @@ public final class ContractValidator {
                 }
 
                 final var childScope = node.type().equals("list") && i == 0 ? listItemScope(node, scope) : scope;
-                final var result = validateNode(child, childPath, childScope, depth + 1, node.type());
+                final var childInputs = node.type().equals("list") && i == 0
+                        ? listInputs(child)
+                        : inputs;
+                final var result = validateNode(child, childPath, childScope, depth + 1, node.type(), childInputs);
                 if (!result.isValid()) {
                     return result;
                 }
             }
 
             return ValidationResult.ok();
+        }
+
+        private Set<String> listInputs(ComponentNode template) {
+            final var ids = new HashSet<String>(screenInputs);
+            if (template.key() != null) {
+                ids.addAll(collectInputIds(template));
+            }
+
+            return ids;
+        }
+
+        private static ValidationResult validateTabs(ComponentNode node, List<ComponentNode> children, String path) {
+            final var ids = new HashSet<String>();
+
+            for (int i = 0; i < children.size(); i++) {
+                final var child = children.get(i);
+                final var childPath = path + ".children[" + i + "]";
+                if (!child.type().equals("tab")) {
+                    return ValidationResult.fail(ValidationErrorCode.MISPLACED_COMPONENT, childPath);
+                }
+
+                final var id = child.props().get("id");
+                if (id == null || !id.isTextual() || id.asText().isEmpty()) {
+                    return ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, childPath + ".props.id");
+                }
+
+                if (!child.props().containsKey("label")) {
+                    return ValidationResult.fail(ValidationErrorCode.INVALID_PROP_TYPE, childPath + ".props.label");
+                }
+
+                if (!ids.add(id.asText())) {
+                    return ValidationResult.fail(ValidationErrorCode.DUPLICATE_TAB, childPath + ".props.id");
+                }
+            }
+
+            final var defaultTab = node.props().get("defaultTab");
+            if (!ids.contains(defaultTab.asText())) {
+                return ValidationResult.fail(ValidationErrorCode.INVALID_PROP_VALUE, path + ".props.defaultTab");
+            }
+
+            return ValidationResult.ok();
+        }
+
+        private static boolean containsInput(ComponentNode node) {
+            return node.type().equals("input") || node.children().stream().anyMatch(NodeValidator::containsInput);
+        }
+
+        private static boolean containsClip(ComponentNode node) {
+            final var overflow = node.props().get("overflow");
+            if (node.type().equals("scroll") || overflow != null && overflow.isTextual()
+                    && overflow.asText().equals("hidden")) {
+                return true;
+            }
+
+            return node.children().stream().anyMatch(NodeValidator::containsClip);
+        }
+
+        private static boolean hasTransformValue(JsonNode value) {
+            return isBinding(value) || nonZero(value);
         }
 
         private ValidationResult validateButtonPayload(ComponentNode node, String path, Map<String, TypeSchema> scope) {
@@ -523,6 +933,11 @@ public final class ContractValidator {
             String path,
             Map<String, TypeSchema> scope
     ) {
+        if (isInputReference(value)) {
+            return TypeSchema.unwrap(schema) instanceof TypeSchema.StringType
+                    ? ValidationResult.ok()
+                    : ValidationResult.fail(ValidationErrorCode.PAYLOAD_SCHEMA_MISMATCH, path);
+        }
         if (isBinding(value)) {
             final var resolved = ResolvedPath.resolve(scope, value.get("$bind").asText());
             if (resolved == null) {

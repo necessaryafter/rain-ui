@@ -12,8 +12,10 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
+import org.joml.Matrix4f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.Base64;
 import java.util.HashMap;
@@ -84,9 +86,32 @@ final class RainScreen extends Screen {
                     // Texture size = drawn size makes the UVs span the whole texture, scaled into the box.
                     final var width = image.width();
                     final var height = image.height();
-                    graphics.blit(texture, image.x(), image.y(), width, height, 0, 0, width, height, width, height);
+                    graphics.setColor(1.0F, 1.0F, 1.0F, image.opacity());
+
+                    try {
+                        graphics.blit(texture, image.x(), image.y(), width, height, 0, 0,
+                                width, height, width, height);
+                    } finally {
+                        graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+                    }
                 }
             }
+            case DrawCommand.PushTransform pushed -> {
+                final var transform = pushed.transform();
+                final var matrix = new Matrix4f()
+                        .m00((float) transform.a())
+                        .m01((float) transform.b())
+                        .m10((float) transform.c())
+                        .m11((float) transform.d())
+                        .m30((float) transform.tx())
+                        .m31((float) transform.ty());
+                graphics.pose().pushPose();
+                graphics.pose().mulPose(matrix);
+            }
+            case DrawCommand.PopTransform ignored -> graphics.pose().popPose();
+            case DrawCommand.PushClip clip -> graphics.enableScissor(
+                    clip.x(), clip.y(), clip.x() + clip.width(), clip.y() + clip.height());
+            case DrawCommand.PopClip ignored -> graphics.disableScissor();
         }
     }
 
@@ -160,6 +185,44 @@ final class RainScreen extends Screen {
         }
 
         return true;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        if (shiftDown() && horizontalAmount == 0) {
+            return controller.scroll(mouseX, mouseY, verticalAmount, 0);
+        }
+
+        return controller.scroll(mouseX, mouseY, horizontalAmount, verticalAmount);
+    }
+
+    private static boolean shiftDown() {
+        final var window = Minecraft.getInstance().getWindow().getWindow();
+        return GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS
+                || GLFW.glfwGetKey(window, GLFW.GLFW_KEY_RIGHT_SHIFT) == GLFW.GLFW_PRESS;
+    }
+
+    @Override
+    public boolean charTyped(char character, int modifiers) {
+        return controller.typeInput(character) || super.charTyped(character, modifiers);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_TAB
+                && controller.focusNextInput((modifiers & GLFW.GLFW_MOD_SHIFT) != 0)) {
+            return true;
+        }
+
+        if (keyCode == GLFW.GLFW_KEY_ENTER && controller.newlineInput()) {
+            return true;
+        }
+
+        if (keyCode == GLFW.GLFW_KEY_BACKSPACE && controller.backspaceInput()) {
+            return true;
+        }
+
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     // ESC, another screen replacing this one, or a disconnect: the server is told unless it asked for the close.

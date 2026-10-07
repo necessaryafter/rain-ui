@@ -131,9 +131,8 @@ inheritance rules of a plugin's model.
 - **M2:** server-initiated updates (update one instance, or every open instance of a screen); a Kotlin-friendly
   adapter API where optional fields accept `null`; a dev warning when a properties send is large or a screen is
   updated too often.
-- **M3:** a `countdown` component taking an epoch-millis `long`, so timers do not need one update per second; local
-  client state for purely visual toggles such as tabs; sending only what changed in an update; a declarative number
-  format prop.
+- **M3:** a `countdown` component taking an epoch-millis `long`, so timers do not need one update per second; sending
+  only what changed in an update; a declarative number format prop.
 - **M2.4:** confirm in the Loom sources that `lwjgl-stb` and `lwjgl-freetype` ship with both target versions, since the
   image and font decoders rely on them.
 - **After v0:** video and WebP as new asset types.
@@ -198,3 +197,22 @@ build before M2. The disk cache and `image` move from M3 into v0.
 the decoder is strict rather than forgiving. Unknown failure reasons map to `OTHER` so an older server still frees the
 instance a newer client reports.
 
+## 10. M3 visual composition and local presentation state
+
+**Status:** Decided in M3
+
+**Implementation:** In progress. Build normalization, visual prop validation, resolved-key checks, rejection of
+invalid resolved visual values at the client session boundary, flow sizing, absolute/relative positioning, automatic
+grid layout, flat backgrounds and borders, image opacity, rectangular child clipping, and 2D transform commands with
+matching hit testing are implemented. Transforms still need in-game visual verification. Rounded borders, polygon
+drawing/hit regions, and custom-font rendering are not yet implemented in the client runtime.
+
+**What:** `key` identifies repeated template roots, while unkeyed list descendants are ephemeral across property
+updates. `box` is a column container and `stack` overlaps in-flow children. `grid` uses uniform cells; `scroll` owns a
+bounded viewport; `tabs` and `input` keep client-local presentation state. `inputValue(id)` is the only bridge from
+local text into an action payload.
+
+Spacing accepts either a nonnegative scalar or explicit sides. Colors accept `#RGB` and `#RRGGBB`; polygon points are
+normalized to integer coordinates on a 0–10000 scale. The intended behavior is for a polygon to shape its element's
+fill, border, and hit region without clipping children. Rectangular `overflow="hidden"` is the only planned child clip.
+Transforms are intended not to affect layout or identity.

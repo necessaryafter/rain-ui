@@ -1,4 +1,6 @@
-import type { AssetRef, TAsset, TBool, TDouble, TInt, TItem, TList, TLong, TObject, TString, TypeSchema } from "./types";
+import type {
+  AssetRef, TAsset, TBool, TDouble, TInt, TItem, TList, TLong, TObject, TString, TypeSchema,
+} from "../contract/types";
 
 export type Optionable<S extends TypeSchema> = S & {
   optional(): S & { optional: true };
@@ -34,13 +36,12 @@ export const t = {
   object: <Fields extends Record<string, TypeSchema>>(fields: Fields) => optionable<TObject>({ kind: "object", fields }),
 };
 
-// Identity generics that preserve literal type inference (no widening)
 export function defineProperties<P extends Record<string, TypeSchema>>(props: P): P {
-    return props;
+  return props;
 }
 
 export function defineActions<A extends Record<string, TypeSchema>>(actions: A): A {
-    return actions;
+  return actions;
 }
 
 // Symbol.for so a screen built against another copy of @rain-ui/core (e.g. the CLI's) is still recognized.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 
-import { defineActions, defineProperties, defineScreen, t } from "./builder";
-import { compileScreen } from "./serialize";
+import { defineActions, defineProperties, defineScreen, t } from "../src/authoring/builder";
+import { compileScreen } from "../src/contract/serialize";
 
 const properties = defineProperties({
   name: t.string(),

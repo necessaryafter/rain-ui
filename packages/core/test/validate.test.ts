@@ -2,12 +2,12 @@ import { describe, it, expect } from "bun:test";
 import * as fs from "fs";
 import * as path from "path";
 
-import { validateContract } from "./validate";
+import { validateContract } from "../src/validate";
 
 // Load fixtures at module scope, before describe() registration (not inside beforeAll).
 // This fixes the test-collection-time ordering issue where nested describe() bodies
 // run synchronously before beforeAll() executes, leaving fixture arrays empty.
-const fixturesDir = path.join(process.cwd(), "schema", "fixtures");
+const fixturesDir = path.resolve(import.meta.dir, "../../../schema/fixtures");
 
 const validFixtures: { name: string; content: any; sourceBytes: number }[] = [];
 const validDir = path.join(fixturesDir, "valid");

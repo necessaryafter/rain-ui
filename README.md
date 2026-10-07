@@ -10,6 +10,20 @@ Rain UI is an experimental framework for building Minecraft interfaces using Typ
 
 The TypeScript side describes **what the interface looks like and what interactions are available**. The Minecraft client runs a Java runtime that interprets a **restricted, validated UI protocol**.
 
+## M3 composition API
+
+M3 work in progress adds `box`, `stack`, `grid`, `scroll`, `input`, and local `tabs`. The contract accepts sizing,
+spacing, positioning, visual, and transform props. The runtime implements flat backgrounds and borders, image opacity,
+rectangular clipping, absolute/relative positioning, and 2D transform commands with matching hit testing. Transforms
+still need in-game visual verification; rounded borders, polygon drawing/hit regions, and custom fonts remain pending.
+`rain dev <dir> [--out <dir>]` watches sources and assets, publishing each successful rebuild while preserving the last
+valid output after an error.
+
+The build expands `#RGB` colors to `#RRGGBB`, fills omitted sides in per-side `padding` and `margin` with zero, and
+maps legacy text `align` to `textAlign`. Visual bindings are type-checked in the contract; the client rejects resolved
+values outside visual bounds before opening or updating a screen. Duplicate resolved list keys are rejected by both
+the server and client.
+
 ---
 
 ## ⚠️ Development Status

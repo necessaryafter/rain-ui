@@ -27,6 +27,7 @@ import com.rainframework.ui.protocol.packet.ServerHello;
 import com.rainframework.ui.protocol.packet.UpdateScreen;
 import com.rainframework.ui.protocol.validation.ContractValidator;
 import com.rainframework.ui.protocol.validation.PropertiesValidator;
+import com.rainframework.ui.protocol.validation.VisualValueValidator;
 import lombok.Builder;
 import org.jspecify.annotations.Nullable;
 
@@ -52,6 +53,7 @@ public final class ClientSession {
     private final LongSupplier nanoClock;
     private final ContractValidator contractValidator = new ContractValidator();
     private final PropertiesValidator propertiesValidator = new PropertiesValidator();
+    private final VisualValueValidator visualValueValidator = new VisualValueValidator();
 
     private @Nullable String assetBaseUrl;
     private @Nullable ScreenController current;
@@ -107,7 +109,12 @@ public final class ClientSession {
             return;
         }
 
-        screen.update(packet.revision(), properties);
+        try {
+            screen.update(packet.revision(), properties);
+        } catch (IllegalArgumentException e) {
+            fail(packet.instanceId(), ScreenFailureReason.INVALID_PROPERTIES, e.getMessage());
+            closeCurrent();
+        }
     }
 
     public void onInteractionRejected(InteractionRejected packet) {
@@ -198,13 +205,19 @@ public final class ClientSession {
                     "Properties do not match the contract"));
         }
 
-        return loadAssets(contract).thenApply(ignored -> new ScreenController(
-                packet.instanceId(),
-                packet.screenId(),
-                contract,
-                packet.revision(),
-                properties,
-                nanoClock));
+        return loadAssets(contract).thenApply(ignored -> {
+            try {
+                return new ScreenController(
+                        packet.instanceId(),
+                        packet.screenId(),
+                        contract,
+                        packet.revision(),
+                        properties,
+                        nanoClock);
+            } catch (IllegalArgumentException e) {
+                throw new ContentLoadException(ScreenFailureReason.INVALID_PROPERTIES, e.getMessage());
+            }
+        });
     }
 
     private CompletableFuture<Void> loadAssets(Contract contract) {
@@ -304,7 +317,12 @@ public final class ClientSession {
         }
 
         try {
-            return MAPPER.readTree(json);
+            final var properties = MAPPER.readTree(json);
+            if (!visualValueValidator.validate(contract, properties).isValid()) {
+                return null;
+            }
+
+            return properties;
         } catch (JsonProcessingException e) {
             return null;
         }

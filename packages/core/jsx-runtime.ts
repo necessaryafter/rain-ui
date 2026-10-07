@@ -1,34 +1,40 @@
 /// <reference path="./assets.d.ts" />
-import type { Binding, ActionRef } from "./src/binding";
-import type { AssetRef, TypeSchema } from "./src/types";
+import type { Binding, ActionRef } from "./src/authoring/binding";
+import type { Polygon } from "./src/authoring/polygon";
+import type { AssetRef, TypeSchema } from "./src/contract/types";
 
 // Raw JSX tree node (before compilation to Contract JSON)
 export interface RawNode {
-    type: string;
-    props: Record<string, unknown>;
-    children: RawNode[];
+  type: string;
+  props: Record<string, unknown>;
+  children: RawNode[];
+  key?: unknown;
 }
 
 // JSX runtime: generic, dumb — just construct nodes and call function components
 export function jsx(type: string | Function, props: any, key?: any): RawNode | RawNode[] {
-    if (typeof type === "function") {
-    return type(props);
-    }
+  if (typeof type === "function") {
+    const result = type(props);
+    if (key === undefined || Array.isArray(result)) return result;
 
-    const { children, ...rest } = props ?? {};
-    const normalizedChildren = children === undefined ? [] : Array.isArray(children) ? children : [children];
+    return { ...result, key };
+  }
 
-    return { type, props: rest, children: normalizedChildren };
+  const { children, ...rest } = props ?? {};
+  const normalizedChildren = children === undefined ? [] : Array.isArray(children) ? children : [children];
+
+  return { type, props: rest, children: normalizedChildren, ...(key === undefined ? {} : { key }) };
 }
 
 export const jsxs = jsx;
 
 export function Fragment(props: { children?: any }): RawNode[] {
-    const children = props.children;
-    if (Array.isArray(children)) {
+  const children = props.children;
+  if (Array.isArray(children)) {
     return children;
-    }
-    return children ? [children] : [];
+  }
+
+  return children ? [children] : [];
 }
 
 // JSX.IntrinsicElements typing for v0 components
@@ -37,42 +43,77 @@ export function Fragment(props: { children?: any }): RawNode[] {
 type PayloadOf<Ref> = Ref extends ActionRef<infer P> ? P : never;
 
 // Button props need cross-prop generic typing
-type ButtonProps<P extends TypeSchema = TypeSchema> = {
-    action: ActionRef<P>;
-    payload?: any; // Relaxed for now; validateContract will check
-    disabled?: boolean | Binding<boolean>;
-    children?: any;
+type ButtonProps<P extends TypeSchema = TypeSchema> = LayoutProps & {
+  action: ActionRef<P>;
+  payload?: any; // Relaxed for now; validateContract will check
+  disabled?: boolean | Binding<boolean>;
+  children?: any;
+};
+
+type Size = number | "fit" | "fill" | Binding<number>;
+type NumberValue = number | Binding<number>;
+type Color = string | Binding<string>;
+type Spacing = number | { top?: number; right?: number; bottom?: number; left?: number };
+type LayoutProps = {
+  width?: Size;
+  height?: Size;
+  minWidth?: NumberValue;
+  minHeight?: NumberValue;
+  maxWidth?: NumberValue;
+  maxHeight?: NumberValue;
+  padding?: Spacing;
+  margin?: Spacing;
+  gap?: NumberValue;
+  position?: "relative" | "absolute";
+  top?: NumberValue;
+  right?: NumberValue;
+  bottom?: NumberValue;
+  left?: NumberValue;
+  align?: "start" | "center" | "end" | "stretch";
+  justify?: "start" | "center" | "end" | "space-between";
+  grow?: NumberValue;
+  shrink?: NumberValue;
+  background?: Color;
+  opacity?: NumberValue;
+  overflow?: "visible" | "hidden";
+  zIndex?: NumberValue;
+  borderWidth?: NumberValue;
+  borderColor?: Color;
+  borderRadius?: NumberValue;
+  rotate?: NumberValue;
+  scale?: NumberValue;
+  scaleX?: NumberValue;
+  scaleY?: NumberValue;
+  skewX?: NumberValue;
+  skewY?: NumberValue;
+  shape?: Polygon;
+  children?: any;
 };
 
 declare global {
-    namespace JSX {
+  namespace JSX {
     interface IntrinsicElements {
-      column: {
-        gap?: number;
-        padding?: number;
-        align?: string;
-        justify?: string;
-        width?: string | number;
-        height?: string | number;
-        children?: any;
-      };
+      column: LayoutProps;
 
-      row: {
-        gap?: number;
-        padding?: number;
-        align?: string;
-        justify?: string;
-        width?: string | number;
-        height?: string | number;
-        children?: any;
-      };
+      row: LayoutProps;
+      box: LayoutProps;
+      stack: LayoutProps;
+      grid: LayoutProps & { cellWidth: NumberValue; cellHeight: NumberValue; columns?: NumberValue };
+      scroll: LayoutProps & { direction?: "vertical" | "horizontal" | "both" };
 
       text: {
         value: string | Binding<string> | Binding<number>;
-        color?: string | Binding<string>;
+        color?: Color;
         font?: AssetRef;
-        align?: string;
+        align?: "left" | "center" | "right" | "start" | "end";
         shadow?: boolean;
+        fontSize?: NumberValue;
+        fontWeight?: "normal" | "bold";
+        textAlign?: "start" | "center" | "end";
+        lineHeight?: NumberValue;
+        letterSpacing?: NumberValue;
+        strokeColor?: Color;
+        strokeWidth?: NumberValue;
       };
 
       item: {
@@ -80,13 +121,30 @@ declare global {
         size?: number;
       };
 
-      image: {
-        src: AssetRef | Binding<unknown>;
-        width?: number | "fit" | "fill";
-        height?: number | "fit" | "fill";
-      };
+      image: LayoutProps & { src: AssetRef | Binding<unknown> };
 
       button: ButtonProps;
+      input: {
+        id: string;
+        value?: string | Binding<string>;
+        placeholder?: string | Binding<string>;
+        multiline?: boolean;
+        maxLength?: number;
+        width?: Size;
+        height?: Size;
+        minWidth?: NumberValue;
+        minHeight?: NumberValue;
+        maxWidth?: NumberValue;
+        maxHeight?: NumberValue;
+        margin?: Spacing;
+        position?: "relative" | "absolute";
+        top?: NumberValue;
+        right?: NumberValue;
+        bottom?: NumberValue;
+        left?: NumberValue;
+      };
+      tabs: { defaultTab: string; children?: any };
+      tab: { id: string; label: string | Binding<string>; children?: any };
 
       list: {
         source: Binding<"list">;
@@ -113,7 +171,7 @@ declare global {
         children?: any;
       };
     }
-    }
+  }
 }
 
 export {};
