@@ -1,14 +1,14 @@
 import * as crypto from "crypto";
 
-import type { RawNode } from "../jsx-runtime";
-import { createActionProxy, createPropertyProxy } from "./binding";
-import type { ScreenDefinition } from "./builder";
+import type { RawNode } from "../../jsx-runtime";
+import { createActionProxy, createPropertyProxy } from "../authoring/binding";
+import type { ScreenDefinition } from "../authoring/builder";
+import { normalizeProps } from "./normalize";
 import { itemScopeOf } from "./path";
 import type { AssetInfo, AssetRef, ComponentNode, Contract, TypeSchema } from "./types";
 
 type Scope = Record<string, TypeSchema>;
 
-// Every asset a screen references, keyed by hash, collected while its props are resolved.
 type AssetTable = Map<string, AssetInfo>;
 
 export interface CompiledScreen {
@@ -18,7 +18,6 @@ export interface CompiledScreen {
   sha256: string;
 }
 
-// Runs render once with binding proxies and turns the JSX tree into the contract, plus its canonical JSON and hash.
 export function compileScreen(screenDef: ScreenDefinition): CompiledScreen {
   const { id, properties, actions, render } = screenDef;
   const assets: AssetTable = new Map();
@@ -79,16 +78,18 @@ function compileNode(node: RawNode, scope: Scope, assets: AssetTable): Component
     });
   }
 
-  return {
+  const compiled: ComponentNode = {
     type: node.type,
-    props: resolveProps(node.type === "show" ? props : node.props, assets),
+    props: resolveProps(node.type, node.type === "show" ? props : node.props, assets),
     children,
   };
+  if (node.key !== undefined) compiled.key = resolveValue(node.key, assets) as ComponentNode["key"];
+  return compiled;
 }
 
 // A list's only child is a function: it is called once with a proxy of the item's fields to get the row template.
 function compileList(node: RawNode, scope: Scope, assets: AssetTable): ComponentNode {
-  const props = resolveProps(node.props, assets);
+  const props = resolveProps(node.type, node.props, assets);
   const source = props.source as { $bind?: unknown } | undefined;
   const template = node.children[0] as unknown;
 
@@ -97,11 +98,13 @@ function compileList(node: RawNode, scope: Scope, assets: AssetTable): Component
     return { type: "list", props, children: [] };
   }
 
-  return {
+  const compiled: ComponentNode = {
     type: "list",
     props,
     children: [compileNode(template(createPropertyProxy(itemScope)) as RawNode, itemScope, assets)],
   };
+  if (node.key !== undefined) compiled.key = resolveValue(node.key, assets) as ComponentNode["key"];
+  return compiled;
 }
 
 // Fragments and arrays are flattened, and null/false/undefined are dropped, so build-time conditions such as
@@ -113,13 +116,13 @@ function compileChildren(children: unknown[], scope: Scope, assets: AssetTable):
     .map((child) => compileNode(child as RawNode, scope, assets));
 }
 
-function resolveProps(props: Record<string, unknown>, assets: AssetTable): Record<string, unknown> {
+function resolveProps(type: string, props: Record<string, unknown>, assets: AssetTable): Record<string, unknown> {
   const resolved: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(props)) {
     resolved[key] = resolveValue(value, assets);
   }
 
-  return resolved;
+  return normalizeProps(type, resolved);
 }
 
 // Converts bindings, asset imports and action references to their JSON form and passes literals through.
@@ -132,6 +135,7 @@ function resolveValue(value: unknown, assets: AssetTable): unknown {
   if (typeof record.$bind === "string") return { $bind: record.$bind };
   if (typeof record.$asset === "string") return { $asset: registerAsset(record as unknown as AssetRef, assets) };
   if (typeof record.__actionId === "string") return record.__actionId;
+  if (Array.isArray(record.__rainPolygon)) return record.__rainPolygon.map((point) => resolveValue(point, assets));
 
   const resolved: Record<string, unknown> = {};
   for (const [key, field] of Object.entries(record)) {
@@ -155,4 +159,4 @@ function canonicalize(value: unknown): unknown {
   return sorted;
 }
 
-export { createActionProxy, createPropertyProxy } from "./binding";
+export { createActionProxy, createPropertyProxy } from "../authoring/binding";

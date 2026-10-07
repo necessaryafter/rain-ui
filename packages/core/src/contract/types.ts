@@ -1,5 +1,3 @@
-// Serialized JSON contract type shapes (consumed by validator and emitted by serialize)
-
 export interface TypeModifiers {
   optional?: true;
   default?: string | number | boolean;
@@ -67,6 +65,7 @@ export interface ComponentNode {
   type: string;
   props: Record<string, unknown>;
   children: ComponentNode[];
+  key?: string | number | { $bind: string };
 }
 
 export interface Contract {

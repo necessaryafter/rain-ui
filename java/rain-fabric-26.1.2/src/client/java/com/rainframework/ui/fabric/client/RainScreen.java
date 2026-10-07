@@ -7,13 +7,17 @@ import com.rainframework.ui.client.session.ClientSession;
 import io.netty.buffer.Unpooled;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
+import org.joml.Matrix3x2f;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.Base64;
 import java.util.HashMap;
@@ -82,10 +86,35 @@ final class RainScreen extends Screen {
                     // Texture size = drawn size makes the UVs span the whole texture, scaled into the box.
                     final var width = image.width();
                     final var height = image.height();
+                    final var tint = (Math.round(image.opacity() * 255) << 24) | 0x00FFFFFF;
                     graphics.blit(RenderPipelines.GUI_TEXTURED, texture, image.x(), image.y(), 0, 0,
-                            width, height, width, height, width, height);
+                            width, height, width, height, width, height, tint);
                 }
             }
+            case DrawCommand.PushTransform pushed -> {
+                final var transform = pushed.transform();
+                final var matrix = new Matrix3x2f(
+                        (float) transform.a(), (float) transform.b(),
+                        (float) transform.c(), (float) transform.d(),
+                        (float) transform.tx(), (float) transform.ty());
+                graphics.pose().pushMatrix();
+                graphics.pose().mul(matrix);
+            }
+            case DrawCommand.PopTransform ignored -> graphics.pose().popMatrix();
+            case DrawCommand.PushClip clip -> {
+                final var pose = graphics.pose();
+                pose.pushMatrix();
+                pose.identity();
+
+                try {
+                    // This version transforms scissor rectangles by the current pose; core supplies screen coordinates.
+                    graphics.enableScissor(
+                            clip.x(), clip.y(), clip.x() + clip.width(), clip.y() + clip.height());
+                } finally {
+                    pose.popMatrix();
+                }
+            }
+            case DrawCommand.PopClip ignored -> graphics.disableScissor();
         }
     }
 
@@ -157,6 +186,44 @@ final class RainScreen extends Screen {
         }
 
         return true;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        if (shiftDown() && horizontalAmount == 0) {
+            return controller.scroll(mouseX, mouseY, verticalAmount, 0);
+        }
+
+        return controller.scroll(mouseX, mouseY, horizontalAmount, verticalAmount);
+    }
+
+    private static boolean shiftDown() {
+        final var window = Minecraft.getInstance().getWindow().handle();
+        return GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS
+                || GLFW.glfwGetKey(window, GLFW.GLFW_KEY_RIGHT_SHIFT) == GLFW.GLFW_PRESS;
+    }
+
+    @Override
+    public boolean charTyped(CharacterEvent event) {
+        return controller.typeInput(new String(Character.toChars(event.codepoint()))) || super.charTyped(event);
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        if (event.key() == GLFW.GLFW_KEY_TAB
+                && controller.focusNextInput((event.modifiers() & GLFW.GLFW_MOD_SHIFT) != 0)) {
+            return true;
+        }
+
+        if (event.key() == GLFW.GLFW_KEY_ENTER && controller.newlineInput()) {
+            return true;
+        }
+
+        if (event.key() == GLFW.GLFW_KEY_BACKSPACE && controller.backspaceInput()) {
+            return true;
+        }
+
+        return super.keyPressed(event);
     }
 
     // ESC, another screen replacing this one, or a disconnect: the server is told unless it asked for the close.

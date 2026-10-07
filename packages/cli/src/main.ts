@@ -8,7 +8,7 @@ import { buildScreens, writeOutput, type Manifest } from "./build";
 import { findNondeterministicCalls } from "./determinism";
 import { registerScreenLoaders } from "./jsx";
 
-const USAGE = "usage: rain build <dir> [--out <dir>] [--check]";
+const USAGE = "usage: rain <build|dev> <dir> [--out <dir>] [--check]";
 const CLI_ENTRY = path.join(import.meta.dir, "../index.ts");
 
 interface BuildOptions {
@@ -19,7 +19,7 @@ interface BuildOptions {
 
 export async function main(args: string[]): Promise<number> {
   const [command, ...rest] = args;
-  if (command !== "build") {
+  if (command !== "build" && command !== "dev") {
     console.error(USAGE);
     return 1;
   }
@@ -30,9 +30,141 @@ export async function main(args: string[]): Promise<number> {
     return 1;
   }
 
+  if (command === "dev") return dev(options.dir, options.out);
   if (options.check) return check(options.dir);
 
   return build(options);
+}
+
+async function dev(dir: string, out: string): Promise<number> {
+  let building = false;
+  let queued = false;
+
+  const rebuild = async () => {
+    if (building) {
+      queued = true;
+      return;
+    }
+
+    building = true;
+
+    try {
+      do {
+        queued = false;
+        await rebuildOnce(dir, out);
+      } while (queued);
+    } finally {
+      building = false;
+    }
+  };
+
+  await rebuild();
+  const watcher = fs.watch(dir, { recursive: true }, (_event, file) => {
+    if (!file || isGeneratedPath(dir, out, file)) return;
+
+    void rebuild().catch((error) => console.error(`error: ${String(error)}`));
+  });
+
+  try {
+    await new Promise<void>((resolve) => {
+      const stop = () => {
+        process.off("SIGINT", stop);
+        process.off("SIGTERM", stop);
+        resolve();
+      };
+
+      process.once("SIGINT", stop);
+      process.once("SIGTERM", stop);
+    });
+  } finally {
+    watcher.close();
+  }
+
+  return 0;
+}
+
+async function rebuildOnce(dir: string, out: string): Promise<void> {
+  await fs.promises.mkdir(path.dirname(out), { recursive: true });
+  const temporary = await fs.promises.mkdtemp(path.join(path.dirname(out), ".rain-dev-"));
+
+  try {
+    const child = Bun.spawn([process.execPath, CLI_ENTRY, "build", dir, "--out", temporary], {
+      stdout: "inherit",
+      stderr: "inherit",
+    });
+    if (await child.exited !== 0) return;
+
+    const manifest = JSON.parse(await fs.promises.readFile(path.join(temporary, "manifest.json"), "utf-8")) as Manifest;
+    const hasSourceModules = await findSourceModules(dir);
+    if (await pathExists(out) && hasSourceModules && Object.keys(manifest.screens).length === 0) return;
+
+    await publishOutput(temporary, out);
+  } finally {
+    await fs.promises.rm(temporary, { recursive: true, force: true });
+  }
+}
+
+async function publishOutput(temporary: string, out: string): Promise<void> {
+  const backupRoot = await fs.promises.mkdtemp(path.join(path.dirname(out), ".rain-dev-backup-"));
+  const backup = path.join(backupRoot, "output");
+  const hadOutput = await pathExists(out);
+  let preserveBackup = false;
+
+  try {
+    if (hadOutput) {
+      await fs.promises.rename(out, backup);
+      preserveBackup = true;
+    }
+
+    try {
+      await fs.promises.rename(temporary, out);
+      preserveBackup = false;
+    } catch (error) {
+      if (hadOutput) {
+        try {
+          await fs.promises.rename(backup, out);
+          preserveBackup = false;
+        } catch (restoreError) {
+          throw new Error(`failed to restore ${out}; previous output is in ${backup}`, { cause: restoreError });
+        }
+      }
+
+      throw error;
+    }
+  } finally {
+    if (!preserveBackup) await fs.promises.rm(backupRoot, { recursive: true, force: true });
+  }
+}
+
+async function pathExists(file: string): Promise<boolean> {
+  try {
+    await fs.promises.access(file);
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw error;
+  }
+}
+
+function isGeneratedPath(dir: string, out: string, file: string): boolean {
+  const changed = path.resolve(dir, file);
+  const relativeToOutput = path.relative(out, changed);
+  const insideOutput = relativeToOutput === ""
+    || (!relativeToOutput.startsWith("..") && !path.isAbsolute(relativeToOutput));
+  const parts = path.relative(dir, changed).split(path.sep);
+
+  return insideOutput || parts.includes("node_modules") || parts.some((part) => part.startsWith(".rain-dev-"));
+}
+
+async function findSourceModules(dir: string): Promise<boolean> {
+  for (const entry of await fs.promises.readdir(dir, { withFileTypes: true })) {
+    if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
+    if (entry.isDirectory() && await findSourceModules(path.join(dir, entry.name))) return true;
+    if (entry.isFile() && /\.[jt]sx?$/.test(entry.name)
+      && !entry.name.endsWith(".d.ts") && !/\.test\.[jt]sx?$/.test(entry.name)) return true;
+  }
+
+  return false;
 }
 
 function parseBuildOptions(args: string[]): BuildOptions | undefined {
@@ -73,8 +205,16 @@ async function build({ dir, out }: BuildOptions): Promise<number> {
   }
 
   registerScreenLoaders();
+  const temporaryCoreLink = ensureCoreResolution(dir);
+  let result: Awaited<ReturnType<typeof buildScreens>>;
 
-  const { screens, errors } = await buildScreens(dir);
+  try {
+    result = await buildScreens(dir);
+  } finally {
+    if (temporaryCoreLink) fs.unlinkSync(temporaryCoreLink);
+  }
+
+  const { screens, errors } = result;
 
   const warnings = await findNondeterministicCalls(screens.map((screen) => screen.source));
   for (const { file, line, call } of warnings) {
@@ -103,6 +243,16 @@ async function build({ dir, out }: BuildOptions): Promise<number> {
   console.log(`built ${screens.length} screen(s) into ${out}`);
 
   return 0;
+}
+
+function ensureCoreResolution(dir: string): string | undefined {
+  const link = path.join(dir, "node_modules", "@rain-ui", "core");
+  if (fs.existsSync(link)) return undefined;
+
+  fs.mkdirSync(path.dirname(link), { recursive: true });
+  fs.symlinkSync(path.join(import.meta.dir, "../../core"), link, "dir");
+
+  return link;
 }
 
 // Two separate processes, so state that leaks between renders in one process cannot hide nondeterminism.

@@ -1,4 +1,4 @@
-import type { TypeSchema } from "./types";
+import type { TypeSchema } from "../contract/types";
 
 // Phantom-typed binding marker: { $bind: string } with implicit type info
 export type Binding<T = unknown> = { readonly $bind: string; readonly __type?: T };
@@ -7,6 +7,14 @@ export type Binding<T = unknown> = { readonly $bind: string; readonly __type?: T
 export interface ActionRef<P extends TypeSchema = TypeSchema> {
     readonly __actionId: string;
     readonly __payloadSchema: P;
+}
+
+export interface InputValue {
+  readonly $input: string;
+}
+
+export function inputValue(id: string): InputValue {
+  return { $input: id };
 }
 
 // Keys that JS machinery reads on any object (await, JSON.stringify, inspection). Answering them with undefined keeps

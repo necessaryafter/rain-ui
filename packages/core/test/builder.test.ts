@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-import { t } from "./builder";
+import { t } from "../src/authoring/builder";
 
 function serialized(schema: unknown): unknown {
   return JSON.parse(JSON.stringify(schema));

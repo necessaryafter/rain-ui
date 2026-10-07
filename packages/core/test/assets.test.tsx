@@ -1,9 +1,9 @@
 import { describe, expect, it } from "bun:test";
 
 import shop from "../../../examples/shop/main";
-import { defineActions, defineProperties, defineScreen, t } from "./builder";
-import { compileScreen } from "./serialize";
-import { validateContract } from "./validate";
+import { defineActions, defineProperties, defineScreen, t } from "../src/authoring/builder";
+import { compileScreen } from "../src/contract/serialize";
+import { validateContract } from "../src/validate";
 
 const BANNER = "3f0a1c8e2b7d4f6a9c1e5b8d2a4f7c9e1b3d5f7a9c2e4b6d8f0a2c4e6b8d0f2a";
 const TITLE_FONT = "7c4e2a9b1d3f5e8a0c2b4d6f8e1a3c5b7d9f2e4a6c8b0d1f3e5a7c9b2d4f6e8a";

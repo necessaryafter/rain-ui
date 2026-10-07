@@ -12,6 +12,18 @@ declarativo.
 O lado TypeScript descreve **como a interface é e quais interações estão disponíveis**. O cliente do Minecraft roda um
 runtime Java que interpreta um **protocolo de UI restrito e validado**.
 
+## API de composição M3
+
+O M3 está em desenvolvimento: `box`, `stack`, `grid`, `scroll`, `input` e `tabs` locais já fazem parte do contrato.
+Fundos e bordas planos, opacidade de imagens, recorte retangular, posicionamento absoluto/relativo e comandos de
+transformação 2D com hit test correspondente estão implementados. As transformações ainda precisam de verificação
+visual no jogo; bordas arredondadas, desenho/hit test de polígonos e fontes customizadas continuam pendentes.
+No build, cores `#RGB` viram `#RRGGBB`, lados omitidos de `padding` e `margin` viram zero, e o antigo `align` de texto
+vira `textAlign`. O cliente rejeita valores visuais inválidos em atualizações; chaves repetidas de listas são rejeitadas
+pelo servidor e pelo cliente.
+
+`rain dev <dir> [--out <dir>]` recompila ao mudar fontes ou assets e preserva a última saída válida após erro.
+
 ---
 
 ## ⚠️ Estado do desenvolvimento
